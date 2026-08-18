@@ -1,0 +1,16 @@
+{
+  "personal_info": {
+    "name": "Ada Example",
+    "id": "1234567"
+  },
+  "previous_studies": [
+    {
+      "degree_programme_name": "Bachelor of Computer Science",
+      "graduation_date": "2026-07-07",
+      "university_name": "Example University",
+      "city": "Eindhoven",
+      "country": "Netherlands",
+      "total_degree_credits": 180
+    }
+  ]
+}

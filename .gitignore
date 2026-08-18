@@ -1,0 +1,8 @@
+node_modules/
+.vite/
+*.log
+.DS_Store
+
+# Confidential production examples must never be committed.
+tests/private/
+

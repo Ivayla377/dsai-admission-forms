@@ -1,0 +1,141 @@
+{
+  "title": "Additional Admissions Form",
+  "showTitle": false,
+  "showQuestionNumbers": "off",
+  "questionTitleLocation": "top",
+  "checkErrorsMode": "onValueChanged",
+  "widthMode": "responsive",
+  "completeText": "Create report",
+  "showCompletePage": false,
+  "pages": [
+    {
+      "name": "applicant_details",
+      "title": "Applicant details",
+      "description": "This form will help you create an additional documentation for your DSAI application documentation. You need to fill in the form, use it to generate a PDF, and upload this PDF in Osiris.",
+      "elements": [
+        {
+          "type": "multipletext",
+          "name": "personal_info",
+          "title": "Personal information",
+          "description": "Enter the details exactly as they appear in your application.",
+          "isRequired": true,
+          "items": [
+            {
+              "name": "name",
+              "isRequired": true,
+              "placeholder": "Surname, Given name(s)",
+              "title": "Name"
+            },
+            {
+              "name": "id",
+              "isRequired": true,
+              "maskType": "pattern",
+              "maskSettings": {
+                "pattern": "9999999"
+              },
+              "title": "Student ID",
+              "maxLength": 7,
+              "inputSize": 7,
+              "validators": [
+                {
+                  "type": "regex",
+                  "text": "Your id is a 7-digit number",
+                  "regex": "\\d{7}"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "previous_studies_page",
+      "title": "Previous studies",
+      "elements": [
+        {
+          "type": "paneldynamic",
+          "name": "previous_studies",
+          "title": "Previous studies",
+          "description": "Provide the degree that is most relevant to this application. You may add a second relevant degree.",
+          "isRequired": true,
+          "panelCount": 1,
+          "minPanelCount": 1,
+          "maxPanelCount": 2,
+          "templateTitle": "Degree {panelIndex}{panel.degree_heading_suffix}",
+          "templateDescription": "{panel.university_name}",
+          "panelsState": "firstExpanded",
+          "addPanelText": "Add another degree",
+          "removePanelText": "Remove degree",
+          "confirmDelete": true,
+          "confirmDeleteText": "Remove this degree and all information entered for it?",
+          "templateElements": [
+            {
+              "type": "text",
+              "name": "degree_programme_name",
+              "title": "Degree programme name",
+              "placeholder": "For example, Bachelor of Computer Science",
+              "isRequired": true,
+              "maxLength": 250,
+              "width": "100%"
+            },
+            {
+              "type": "expression",
+              "name": "degree_heading_suffix",
+              "expression": "iif({panel.degree_programme_name} notempty, ': ' + {panel.degree_programme_name}, '')",
+              "visible": false
+            },
+            {
+              "type": "text",
+              "name": "university_name",
+              "title": "University name",
+              "placeholder": "Official university name",
+              "isRequired": true,
+              "maxLength": 250,
+              "width": "100%"
+            },
+            {
+              "type": "text",
+              "name": "country",
+              "title": "Country",
+              "isRequired": true,
+              "maxLength": 120,
+              "width": "50%"
+            },
+            {
+              "type": "text",
+              "name": "city",
+              "title": "City",
+              "isRequired": true,
+              "maxLength": 120,
+              "width": "50%",
+              "startWithNewLine": false
+            },
+            {
+              "type": "text",
+              "name": "graduation_date",
+              "title": "Expected or completed graduation date",
+              "description": "Enter the actual date or your best current estimate.",
+              "inputType": "date",
+              "isRequired": true,
+              "width": "50%"
+            },
+            {
+              "type": "text",
+              "name": "total_degree_credits",
+              "title": "Total degree credits (ECTS)",
+              "description": "Enter the ECTS equivalent if another credit system is used.",
+              "inputType": "number",
+              "placeholder": "For example, 180",
+              "isRequired": true,
+              "min": 1,
+              "max": 10000,
+              "step": 0.5,
+              "width": "50%",
+              "startWithNewLine": false
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

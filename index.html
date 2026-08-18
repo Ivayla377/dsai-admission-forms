@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="TU/e DS&AI additional admissions form"
+    />
+    <title>Additional Admissions Form</title>
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="app-header">
+        <div class="brand-lockup">
+          <img
+            id="tueLogo"
+            class="tue-logo"
+            alt="Eindhoven University of Technology"
+          />
+          <div class="brand-copy">
+            <p class="app-kicker">
+              TU/e MSc Data Science &amp; Artificial Intelligence
+            </p>
+            <h1 id="appTitle">Additional Admissions Form</h1>
+          </div>
+        </div>
+        <span id="appYear" class="app-year"></span>
+      </header>
+
+      <main
+        id="surveyShell"
+        class="survey-shell"
+        aria-label="DS&AI additional admissions form"
+      >
+        <div id="surveyElement"></div>
+      </main>
+
+      <div id="reportScreen" class="report-screen" hidden>
+        <section
+          id="completionActions"
+          class="report-page"
+          aria-live="polite"
+        >
+          <header class="report-page__header">
+            <h2 id="reportTitle">Creating your application PDF</h2>
+            <p id="completionStatus" role="status">
+              Please wait while the PDF and embedded Output JSON are prepared.
+            </p>
+          </header>
+
+          <div class="report-file-card">
+            <div class="report-file-card__description">
+              <p id="pdfFilename" class="report-filename"></p>
+              <p>
+                Includes your completed form and an embedded machine-readable
+                copy of your answers.
+              </p>
+            </div>
+            <button
+              id="downloadPdf"
+              class="primary-download"
+              type="button"
+              disabled
+            >
+              <svg
+                class="download-icon"
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+              >
+                <path d="M12 3v12m0 0 4-4m-4 4-4-4M5 17v3h14v-3" />
+              </svg>
+              Download application PDF
+            </button>
+          </div>
+
+          <div class="report-data-row">
+            <div>
+              <h3>Separate data copy</h3>
+              <p>
+                For your own records or troubleshooting. You do not need to
+                upload this file to OSIRIS.
+              </p>
+            </div>
+            <button
+              id="downloadJson"
+              class="secondary-download"
+              type="button"
+              disabled
+            >
+              Download Output JSON (optional)
+            </button>
+          </div>
+        </section>
+
+        <nav class="report-navigation" aria-label="Report navigation">
+          <button id="previousButton" class="report-previous-button" type="button">
+            Previous
+          </button>
+        </nav>
+      </div>
+    </div>
+
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
