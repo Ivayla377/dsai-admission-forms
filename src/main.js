@@ -19,6 +19,8 @@ import {
 import "./styles.scss";
 
 const FORM_VERSION = __FORM_VERSION__;
+const REPORT_PAGE_NAME = "application_report";
+const REPORT_MOUNT_ID = "reportMount";
 
 const surveyTheme = {
   ...DefaultLight,
@@ -33,124 +35,207 @@ const surveyTheme = {
   },
 };
 
-const survey = new Model(cloneJson(formDefinition));
+const survey = new Model(createRuntimeFormDefinition(formDefinition));
 survey.applyTheme(surveyTheme);
 survey.focusFirstQuestionAutomatic = false;
+survey.showCompleteButton = false;
+addRequirementKnowledgeDescriptions(survey);
 
-const surveyShell = requiredElement("surveyShell");
-const reportScreen = requiredElement("reportScreen");
-const completionActions = requiredElement("completionActions");
-const reportTitle = requiredElement("reportTitle");
-const completionStatus = requiredElement("completionStatus");
-const pdfFilename = requiredElement("pdfFilename");
-const downloadPdfButton = requiredElement("downloadPdf");
-const downloadJsonButton = requiredElement("downloadJson");
-const previousButton = requiredElement("previousButton");
+const reportTemplate = requiredElement("reportPageTemplate");
 
 let preparedOutput = null;
 let preparedPdfBlob = null;
 let reportGenerationId = 0;
 
 setBranding();
+updateNextButtonText(survey);
 
-survey.onCompleting.add((sender, options) => {
-  try {
-    preparedOutput = buildOutput({
-      surveyData: sender.data,
-      formVersion: FORM_VERSION,
-    });
-  } catch (error) {
-    options.allow = false;
-    showGenerationError(error);
+survey.onCurrentPageChanged.add((sender) => {
+  updateNextButtonText(sender);
+
+  if (sender.currentPage?.name === REPORT_PAGE_NAME) {
+    scheduleReportGeneration(sender);
+  } else {
+    invalidatePreparedReport();
   }
 });
 
-survey.onComplete.add(async (sender) => {
-  const generationId = ++reportGenerationId;
-  showReportPage("preparing");
-
-  try {
-    preparedOutput ??= buildOutput({
-      surveyData: sender.data,
-      formVersion: FORM_VERSION,
-    });
-    pdfFilename.textContent = getPdfFilename(preparedOutput);
-    preparedPdfBlob = await createAugmentedPdfBlob(preparedOutput, {
-      logoUrl: tueLogoUrl,
-    });
-
-    if (generationId !== reportGenerationId) {
-      return;
-    }
-
-    completionActions.dataset.state = "ready";
-    reportTitle.textContent = "Your application PDF is ready";
-    completionStatus.textContent =
-      "Download the PDF, review the information, and upload the same PDF to OSIRIS.";
-    downloadPdfButton.disabled = false;
-    downloadJsonButton.disabled = false;
-    completionActions.scrollIntoView({ behavior: "smooth", block: "start" });
-  } catch (error) {
-    showGenerationError(error);
+document.addEventListener("click", (event) => {
+  if (!(event.target instanceof Element)) {
+    return;
   }
-});
 
-downloadPdfButton.addEventListener("click", () => {
-  if (preparedPdfBlob && preparedOutput) {
+  if (event.target.closest("#downloadPdf") && preparedPdfBlob && preparedOutput) {
     downloadPdfBlob(preparedPdfBlob, preparedOutput);
   }
-});
 
-downloadJsonButton.addEventListener("click", () => {
-  if (preparedOutput) {
+  if (event.target.closest("#downloadJson") && preparedOutput) {
     downloadOutputJson(preparedOutput);
   }
 });
 
-previousButton.addEventListener("click", () => {
-  reportGenerationId += 1;
+survey.render(requiredElement("surveyElement"));
+
+function createRuntimeFormDefinition(source) {
+  const runtimeDefinition = cloneJson(source);
+  const reportPage = runtimeDefinition.pages.find(
+    (page) => page.name === REPORT_PAGE_NAME,
+  );
+
+  if (!reportPage) {
+    throw new Error(
+      `The Form JSON must define the final "${REPORT_PAGE_NAME}" page.`,
+    );
+  }
+
+  reportPage.elements = [
+    {
+      type: "html",
+      name: "application_report_content",
+      html: `<div id="${REPORT_MOUNT_ID}"></div>`,
+      showNumber: false,
+    },
+  ];
+
+  return runtimeDefinition;
+}
+
+function scheduleReportGeneration(model) {
+  const generationId = ++reportGenerationId;
   preparedOutput = null;
   preparedPdfBlob = null;
 
-  survey.clear(false, false);
-  survey.currentPageNo = Math.max(0, survey.visiblePageCount - 1);
+  // SurveyJS changes the current page before its UI renderer has mounted the
+  // new page. Deferring once lets the report placeholder enter the DOM first.
+  queueMicrotask(() => generateReport(model, generationId));
+}
 
-  reportScreen.hidden = true;
-  surveyShell.hidden = false;
-  surveyShell.scrollIntoView({ behavior: "smooth", block: "start" });
-});
+async function generateReport(model, generationId) {
+  if (
+    generationId !== reportGenerationId ||
+    model.currentPage?.name !== REPORT_PAGE_NAME
+  ) {
+    return;
+  }
 
-survey.render(requiredElement("surveyElement"));
+  const reportView = mountReportView();
+  showPreparingState(reportView);
 
-function showGenerationError(error) {
-  reportGenerationId += 1;
-  showReportPage("error");
-  reportTitle.textContent = "Your application PDF could not be created";
-  downloadPdfButton.disabled = true;
-  downloadJsonButton.disabled = !preparedOutput;
+  try {
+    preparedOutput = buildOutput({
+      surveyData: model.data,
+      formDefinition,
+      formVersion: FORM_VERSION,
+    });
+    reportView.pdfFilename.textContent = getPdfFilename(preparedOutput);
+    preparedPdfBlob = await createAugmentedPdfBlob(preparedOutput, {
+      logoUrl: tueLogoUrl,
+    });
+
+    if (
+      generationId !== reportGenerationId ||
+      model.currentPage?.name !== REPORT_PAGE_NAME
+    ) {
+      return;
+    }
+
+    reportView.completionActions.dataset.state = "ready";
+    reportView.reportTitle.textContent = "Your application PDF is ready";
+    reportView.completionStatus.textContent =
+      "Download the PDF, review the information, and upload the same PDF to OSIRIS.";
+    reportView.downloadPdfButton.disabled = false;
+    reportView.downloadJsonButton.disabled = false;
+    reportView.completionActions.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    });
+  } catch (error) {
+    showGenerationError(reportView, error);
+  }
+}
+
+function mountReportView() {
+  const mount = requiredElement(REPORT_MOUNT_ID);
+  mount.replaceChildren(reportTemplate.content.cloneNode(true));
+
+  return {
+    completionActions: requiredElement("completionActions"),
+    reportTitle: requiredElement("reportTitle"),
+    completionStatus: requiredElement("completionStatus"),
+    pdfFilename: requiredElement("pdfFilename"),
+    downloadPdfButton: requiredElement("downloadPdf"),
+    downloadJsonButton: requiredElement("downloadJson"),
+  };
+}
+
+function showPreparingState(reportView) {
+  reportView.completionActions.dataset.state = "preparing";
+  reportView.reportTitle.textContent = "Creating your application PDF";
+  reportView.completionStatus.textContent =
+    "Please wait while the PDF and embedded Output JSON are prepared.";
+  reportView.pdfFilename.textContent =
+    `DSAI-additional-admissions-${FORM_VERSION}.pdf`;
+  reportView.downloadPdfButton.disabled = true;
+  reportView.downloadJsonButton.disabled = true;
+}
+
+function showGenerationError(reportView, error) {
+  reportView.completionActions.dataset.state = "error";
+  reportView.reportTitle.textContent =
+    "Your application PDF could not be created";
+  reportView.downloadPdfButton.disabled = true;
+  reportView.downloadJsonButton.disabled = !preparedOutput;
 
   if (error instanceof OutputValidationError) {
-    completionStatus.textContent = error.message;
+    reportView.completionStatus.textContent = error.message;
   } else {
-    completionStatus.textContent =
-      "The application files could not be generated. Your answers remain in the form; please review them and try again.";
+    reportView.completionStatus.textContent =
+      "The application files could not be generated. Your answers remain in the form; please go back, review them and try again.";
   }
 
   console.error(error);
 }
 
-function showReportPage(state) {
-  surveyShell.hidden = true;
-  reportScreen.hidden = false;
-  completionActions.dataset.state = state;
+function invalidatePreparedReport() {
+  reportGenerationId += 1;
+  preparedOutput = null;
+  preparedPdfBlob = null;
+}
 
-  if (state === "preparing") {
-    reportTitle.textContent = "Creating your application PDF";
-    completionStatus.textContent =
-      "Please wait while the PDF and embedded Output JSON are prepared.";
-    pdfFilename.textContent = `DSAI-additional-admissions-${FORM_VERSION}.pdf`;
-    downloadPdfButton.disabled = true;
-    downloadJsonButton.disabled = true;
+function updateNextButtonText(model) {
+  const reportPageIndex = model.pages.findIndex(
+    (page) => page.name === REPORT_PAGE_NAME,
+  );
+  const isBeforeReport = model.currentPageNo === reportPageIndex - 1;
+
+  model.pageNextText = isBeforeReport
+    ? formDefinition.completeText
+    : (formDefinition.pageNextText ?? "Next");
+}
+
+function addRequirementKnowledgeDescriptions(model) {
+  const requirementPanels = model.pages.flatMap((page) =>
+    page.elements.filter(
+      (element) =>
+        element.getType() === "panel" &&
+        element.name.startsWith("requirement_"),
+    ),
+  );
+
+  for (const requirement of requirementPanels) {
+    const evidence = requirement.elements.find(
+      (element) => element.getType() === "paneldynamic",
+    );
+    const topics = evidence?.templateElements.find(
+      (element) => element.name === "topics_covered",
+    );
+    const topicLabels = (topics?.choices ?? []).map(
+      (choice) => choice.text || String(choice.value),
+    );
+
+    requirement.description = topicLabels
+      .map((topic) => `- ${topic}`)
+      .join("\n");
   }
 }
 

@@ -4,20 +4,35 @@ import test from "node:test";
 import { Model } from "survey-core";
 
 import formDefinition from "../forms/2025-2026.json" with { type: "json" };
+import fixture from "./fixtures/synthetic-application.json" with { type: "json" };
 
 test("the 2025-2026 form loads and round-trips through SurveyJS", () => {
   const survey = new Model();
-  survey.fromJSON(formDefinition, { validatePropertyValues: true });
+  survey.fromJSON(structuredClone(formDefinition), {
+    validatePropertyValues: true,
+  });
 
   assert.deepEqual(
     (survey.jsonErrors ?? []).map((error) => error.message),
     [],
   );
-  assert.equal(survey.pages.length, 2);
+  assert.equal(survey.pages.length, 6);
   assert.deepEqual(
     survey.pages.map((page) => page.name),
-    ["applicant_details", "previous_studies_page"],
+    [
+      "applicant_details",
+      "previous_studies_page",
+      "relevant_courses_page",
+      "prerequisite_foundations_page",
+      "prerequisite_software_data_project_page",
+      "application_report",
+    ],
   );
+
+  const reportPage = survey.getPageByName("application_report");
+  assert.equal(reportPage.title, "Report");
+  assert.equal(reportPage.navigationTitle, "Report");
+  assert.equal(reportPage.elements.length, 0);
 
   const serialized = survey.toJSON();
   const roundTripped = new Model(serialized).toJSON();
@@ -29,6 +44,14 @@ test("the form presents the approved title and introduction", () => {
   assert.equal(formDefinition.showTitle, false);
   assert.equal(formDefinition.completeText, "Create report");
   assert.equal(formDefinition.showCompletePage, false);
+  assert.equal(formDefinition.showQuestionNumbers, "on");
+  assert.equal(formDefinition.showProgressBar, "top");
+  assert.equal(formDefinition.progressBarType, "pages");
+  assert.equal(
+    Object.hasOwn(formDefinition, "showPreviewBeforeComplete"),
+    false,
+  );
+  assert.equal(Object.hasOwn(formDefinition, "previewMode"), false);
   assert.equal(Object.hasOwn(formDefinition, "completedHtml"), false);
   assert.equal(
     formDefinition.pages[0].description,
@@ -37,7 +60,7 @@ test("the form presents the approved title and introduction", () => {
 });
 
 test("previous studies is a required Dynamic Panel limited to two degrees", () => {
-  const survey = new Model(formDefinition);
+  const survey = createSurvey();
   const previousStudies = survey.getQuestionByName("previous_studies");
 
   assert.ok(previousStudies);
@@ -68,7 +91,11 @@ test("previous studies is a required Dynamic Panel limited to two degrees", () =
   );
   assert.equal(applicantQuestions[3].startWithNewLine, false);
   assert.equal(applicantQuestions[5].startWithNewLine, false);
-  assert.equal(applicantQuestions[5].inputType, "number");
+  assert.equal(applicantQuestions[5].inputType, "text");
+  assert.equal(applicantQuestions[5].maskType, "numeric");
+  assert.equal(applicantQuestions[5].maskSettings.min, 1);
+  assert.equal(applicantQuestions[5].maskSettings.max, 10000);
+  assert.equal(applicantQuestions[5].maskSettings.precision, 1);
 
   const degreePanel = previousStudies.panels[0];
   assert.deepEqual(
@@ -92,10 +119,234 @@ test("previous studies is a required Dynamic Panel limited to two degrees", () =
   );
   assert.equal(previousStudies.templateDescription, "{panel.university_name}");
   assert.equal(previousStudies.panelsState, "firstExpanded");
+
+  const degreeReference = previousStudies.templateElements.find(
+    (question) => question.name === "degree_ref",
+  );
+  assert.equal(degreeReference.getType(), "expression");
+  assert.equal(degreeReference.visible, false);
+  assert.equal(degreeReference.clearIfInvisible, "none");
+  assert.equal(degreeReference.expression, "'degree-' + ({panelIndex} + 1)");
+});
+
+test("relevant courses is a Dynamic Panel with copied degree choices", () => {
+  const survey = createSurvey();
+  const relevantCourses = survey.getQuestionByName("relevant_courses");
+
+  assert.equal(relevantCourses.getType(), "paneldynamic");
+  assert.equal(relevantCourses.minPanelCount, 1);
+  assert.equal(relevantCourses.maxPanelCount, 30);
+  assert.equal(relevantCourses.panelsState, "firstExpanded");
+  assert.equal(relevantCourses.confirmDelete, true);
+  assert.equal(relevantCourses.addPanelText, "Add another course");
+  assert.equal(relevantCourses.keyName, "course_ref");
+
+  const applicantQuestions = relevantCourses.templateElements.filter(
+    (question) => question.getType() !== "expression",
+  );
+  assert.deepEqual(
+    applicantQuestions.map((question) => question.name),
+    [
+      "degree_ref",
+      "course_title",
+      "course_code",
+      "final_grade",
+      "course_credits",
+      "official_course_description",
+    ],
+  );
+
+  const degree = applicantQuestions[0];
+  assert.equal(degree.choicesFromQuestion, "previous_studies");
+  assert.equal(degree.choiceValuesFromQuestion, "degree_ref");
+  assert.equal(degree.choiceTextsFromQuestion, "degree_label");
+
+  const courseTitle = applicantQuestions.find(
+    (question) => question.name === "course_title",
+  );
+  const courseCode = applicantQuestions.find(
+    (question) => question.name === "course_code",
+  );
+  assert.equal(courseTitle.width, "65%");
+  assert.equal(courseCode.width, "30%");
+  assert.equal(courseCode.startWithNewLine, false);
+
+  const finalGrade = applicantQuestions.find(
+    (question) => question.name === "final_grade",
+  );
+  const courseCredits = applicantQuestions.find(
+    (question) => question.name === "course_credits",
+  );
+  assert.equal(finalGrade.isRequired, false);
+  assert.equal(finalGrade.requiredIf, undefined);
+  assert.equal(finalGrade.width, "50%");
+  assert.equal(courseCredits.width, "45%");
+  assert.equal(courseCredits.startWithNewLine, false);
+  assert.equal(courseCredits.inputType, "text");
+  assert.equal(courseCredits.maskType, "numeric");
+  assert.equal(courseCredits.maskSettings.min, 0.1);
+  assert.equal(courseCredits.maskSettings.max, 10000);
+  assert.equal(courseCredits.maskSettings.precision, 1);
+
+  assert.deepEqual(
+    relevantCourses.panels[0].rows
+      .map((row) =>
+        row.elements
+          .filter((question) => question.isVisible)
+          .map((question) => question.name),
+      )
+      .filter((row) => row.length > 0),
+    [
+      ["degree_ref"],
+      ["course_title", "course_code"],
+      ["final_grade", "course_credits"],
+      ["official_course_description"],
+    ],
+  );
+
+  const officialDescription = applicantQuestions.find(
+    (question) => question.name === "official_course_description",
+  );
+  assert.equal(officialDescription.getType(), "comment");
+  assert.equal(officialDescription.autoGrow, true);
+  assert.match(officialDescription.description, /include the link/i);
+
+  const courseReference = relevantCourses.templateElements.find(
+    (question) => question.name === "course_ref",
+  );
+  const courseLabel = relevantCourses.templateElements.find(
+    (question) => question.name === "course_label",
+  );
+  assert.equal(
+    courseReference.expression,
+    "{panel.degree_ref} + '::' + {panel.course_code}",
+  );
+  assert.equal(
+    courseLabel.expression,
+    "{panel.course_code} + ' ' + {panel.course_title}",
+  );
+});
+
+test("requirement panels contain only declarative course evidence logic", () => {
+  const survey = createSurvey();
+  const requirementPanels = getRequirementPanels(survey);
+
+  assert.ok(requirementPanels.length > 0);
+  assert.deepEqual(
+    requirementPanels.map((requirement) => requirement.no),
+    ["1.", "2.", "3.", "4.", "5.", "6.", "7.", "8.", "9.", "10."],
+  );
+
+  for (const requirement of requirementPanels) {
+    assert.equal(requirement.showNumber, true);
+    assert.equal(requirement.description, "");
+    const evidence = requirement.elements.find(
+      (element) => element.getType() === "paneldynamic",
+    );
+    assert.ok(evidence, `${requirement.name} should contain an evidence panel`);
+    assert.equal(evidence.panelCount, 0);
+    assert.equal(evidence.minPanelCount, 0);
+    assert.equal(evidence.maxPanelCount, 30);
+    assert.equal(evidence.panelsState, "firstExpanded");
+    assert.equal(evidence.confirmDelete, true);
+    assert.equal(evidence.addPanelText, "Add a relevant course");
+    assert.equal(evidence.keyName, "course_ref");
+
+    const course = evidence.templateElements.find(
+      (question) => question.name === "course_ref",
+    );
+    assert.equal(course.choicesFromQuestion, "relevant_courses");
+    assert.equal(course.choiceValuesFromQuestion, "course_ref");
+    assert.equal(course.choiceTextsFromQuestion, "course_label");
+
+    const topics = evidence.templateElements.find(
+      (question) => question.name === "topics_covered",
+    );
+    assert.ok(topics, `${requirement.name} should define prerequisite topics`);
+    assert.equal(topics.visibleIf, "{panel.course_ref} notempty");
+    assert.equal(topics.isRequired, true);
+    assert.ok(topics.choices.length > 0);
+
+    const explanation = evidence.templateElements.find(
+      (question) => question.name === "additional_explanation",
+    );
+    assert.equal(explanation.visibleIf, "{panel.course_ref} notempty");
+    assert.equal(explanation.autoGrow, true);
+  }
+});
+
+test("coverage pages contain the shared guidance", () => {
+  const survey = createSurvey();
+  const coveragePages = survey.pages.filter((page) =>
+    page.name.startsWith("prerequisite_"),
+  );
+
+  assert.equal(coveragePages.length, 2);
+  assert.ok(
+    coveragePages.every((page) =>
+      page.description.includes("If you have no relevant course"),
+    ),
+  );
+});
+
+test("degree and course dropdowns copy calculated values from earlier pages", () => {
+  const survey = createSurvey();
+  const previousStudy = survey.getQuestionByName("previous_studies").panels[0];
+  previousStudy.getQuestionByName("degree_programme_name").value =
+    "Computer Science";
+  previousStudy.getQuestionByName("university_name").value =
+    "Example University";
+
+  const relevantCourse = survey.getQuestionByName("relevant_courses").panels[0];
+  const degree = relevantCourse.getQuestionByName("degree_ref");
+  assert.deepEqual(
+    degree.visibleChoices.map((choice) => ({
+      value: choice.value,
+      text: choice.text,
+    })),
+    [
+      {
+        value: "degree-1",
+        text: "Degree 1: Computer Science (Example University)",
+      },
+    ],
+  );
+
+  degree.value = "degree-1";
+  relevantCourse.getQuestionByName("course_code").value = "COURSE101";
+  relevantCourse.getQuestionByName("course_title").value = "Example Course";
+
+  const evidence = getRequirementPanels(survey)
+    .map((requirement) =>
+      requirement.elements.find(
+        (element) => element.getType() === "paneldynamic",
+      ),
+    )
+    .find((question) =>
+      question.templateElements.some(
+        (element) => element.name === "topics_covered",
+      ),
+    );
+  evidence.addPanel();
+  const evidencePanel = evidence.panels[0];
+  const course = evidencePanel.getQuestionByName("course_ref");
+  const topics = evidencePanel.getQuestionByName("topics_covered");
+
+  assert.deepEqual(
+    course.visibleChoices.map((choice) => ({
+      value: choice.value,
+      text: choice.text,
+    })),
+    [{ value: "degree-1::COURSE101", text: "COURSE101 Example Course" }],
+  );
+  assert.equal(topics.isVisible, false);
+
+  course.value = "degree-1::COURSE101";
+  assert.equal(topics.isVisible, true);
 });
 
 test("personal information matches the shared TU/e form structure", () => {
-  const survey = new Model(formDefinition);
+  const survey = createSurvey();
   const personalInformation = survey.getQuestionByName("personal_info");
 
   assert.ok(personalInformation);
@@ -119,7 +370,7 @@ test("personal information matches the shared TU/e form structure", () => {
 });
 
 test("degree panels use entered values in collapsible headings", () => {
-  const emptySurvey = new Model(formDefinition);
+  const emptySurvey = createSurvey();
   const emptyDegree = emptySurvey.getQuestionByName("previous_studies").panels[0];
 
   assert.equal(
@@ -127,7 +378,7 @@ test("degree panels use entered values in collapsible headings", () => {
     "Degree 1",
   );
 
-  const survey = new Model(formDefinition);
+  const survey = createSurvey();
   survey.data = {
     previous_studies: [
       {
@@ -161,3 +412,17 @@ test("degree panels use entered values in collapsible headings", () => {
 test("the Form JSON contains no parallel custom requirements structure", () => {
   assert.equal(Object.hasOwn(formDefinition, "requirements"), false);
 });
+
+function getRequirementPanels(survey) {
+  return survey.pages.flatMap((page) =>
+    page.elements.filter(
+      (element) =>
+        element.getType() === "panel" &&
+        element.name.startsWith("requirement_"),
+    ),
+  );
+}
+
+function createSurvey() {
+  return new Model(structuredClone(formDefinition));
+}

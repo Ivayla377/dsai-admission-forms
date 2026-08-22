@@ -12,5 +12,17 @@
       "country": "Netherlands",
       "total_degree_credits": 180
     }
+  ],
+  "relevant_courses": [
+    {
+      "degree_ref": "degree-1",
+      "course_title": "Linear Algebra",
+      "course_code": "MATH101",
+      "course_credits": 5,
+      "final_grade": "8.5",
+      "official_course_description": "Matrices, vector spaces, linear systems, eigenvalues and eigenvectors.",
+      "course_ref": "degree-1::MATH101",
+      "course_label": "MATH101 Linear Algebra"
+    }
   ]
 }

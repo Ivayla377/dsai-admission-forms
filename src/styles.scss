@@ -109,10 +109,6 @@ select {
   overflow: hidden;
 }
 
-.survey-shell[hidden] {
-  display: none;
-}
-
 #surveyElement .sd-root-modern {
   --sjs-primary-backcolor: var(--action-green);
   --sjs-primary-backcolor-dark: var(--action-green-dark);
@@ -128,6 +124,16 @@ select {
   padding: 24px;
 }
 
+// Keep SurveyJS's own page progress spacing aligned with the other TU/e forms.
+#surveyElement .sd-progress-buttons {
+  padding-top: 14px;
+  padding-bottom: 0;
+}
+
+#surveyElement .sd-progress-buttons__footer .sd-progress-buttons__page-title {
+  margin-top: 4px;
+}
+
 #surveyElement .sd-title,
 #surveyElement .sd-page__title {
   color: var(--ink);
@@ -137,6 +143,7 @@ select {
 #surveyElement .sd-page__title {
   font-size: 1.7rem;
   line-height: 1.2;
+  margin-bottom: 8px;
 }
 
 #surveyElement .sd-question__description,
@@ -147,33 +154,23 @@ select {
   line-height: 1.45;
 }
 
-#surveyElement .sd-page__description {
-  border-left: 3px solid var(--tue-red);
-  border-radius: 2px;
-  margin: 6px 0 24px;
-  padding: 14px 18px;
-  background: var(--paper);
-  box-shadow: var(--panel-shadow);
-  color: var(--ink);
-  font-size: 0.95rem;
-  line-height: 1.55;
+#surveyElement .sd-panel__description {
+  white-space: pre-line;
+}
+
+#surveyElement .sd-panel__title .sd-element__num {
+  color: inherit;
+  font-size: var(--sjs-font-questiontitle-size, var(--sjs-font-size, 16px));
+  font-weight: inherit;
+  line-height: calc(
+    var(--sjs-font-questiontitle-size, var(--sjs-font-size, 16px)) * 1.5
+  );
+  padding-bottom: 0;
+  padding-top: 0;
 }
 
 #surveyElement .sd-question {
   border-radius: 4px;
-}
-
-// Keep numeric validation and mobile numeric keyboards without displaying
-// browser-specific increment and decrement controls.
-#surveyElement input[type="number"] {
-  appearance: textfield;
-  -moz-appearance: textfield;
-}
-
-#surveyElement input[type="number"]::-webkit-inner-spin-button,
-#surveyElement input[type="number"]::-webkit-outer-spin-button {
-  margin: 0;
-  appearance: none;
 }
 
 #surveyElement .sd-paneldynamic__add-btn {
@@ -205,128 +202,102 @@ select {
 }
 
 #surveyElement .sd-navigation__prev-btn,
-#surveyElement .sd-navigation__next-btn,
-.report-previous-button {
+#surveyElement .sd-navigation__next-btn {
   border: 0;
   background: var(--tue-red);
   color: #ffffff;
 }
 
 #surveyElement .sd-navigation__prev-btn:hover,
-#surveyElement .sd-navigation__next-btn:hover,
-.report-previous-button:hover {
+#surveyElement .sd-navigation__next-btn:hover {
   background: var(--tue-red-dark);
 }
 
 .report-page {
   min-width: 0;
   overflow: hidden;
-  border: 1px solid var(--line);
+  border: 0;
   border-radius: 4px;
   background: var(--paper);
   box-shadow: var(--panel-shadow);
   font-family: inherit;
 }
 
-.report-screen[hidden] {
-  display: none;
+.report-page__content {
+  padding: 32px 40px 36px;
 }
 
 .report-page__header {
-  padding: 28px 32px 20px;
+  padding: 0;
 }
 
 .report-page__header h2 {
-  margin: 0 0 5px;
-  font-size: 1.7rem;
+  margin: 0 0 6px;
+  font-size: 1.2rem;
   font-weight: 600;
-  line-height: 1.2;
+  line-height: 1.35;
 }
 
-.report-page__header p,
-.report-file-card p {
+.report-page__header p {
   margin: 0;
   color: var(--muted);
+  font-size: 1rem;
+  line-height: 1.5;
 }
 
 .report-page[data-state="error"] .report-page__header p {
   color: var(--error);
 }
 
-.report-file-card {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
+.report-file {
+  display: flex;
   align-items: center;
-  gap: 28px;
-  border: 1px solid var(--line-strong);
-  border-radius: 4px;
-  margin: 8px 32px 34px;
-  padding: 26px;
+  gap: 10px;
+  margin: 24px 0 14px;
+  color: var(--muted);
+}
+
+.document-icon {
+  width: 19px;
+  height: 19px;
+  flex: 0 0 19px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.6;
 }
 
 .report-filename {
-  margin-bottom: 3px !important;
-  color: var(--ink) !important;
-  font-size: 1rem;
-  font-weight: 600;
-}
-
-.report-navigation {
-  margin-top: 18px;
-}
-
-.report-previous-button {
-  min-width: 165px;
-  min-height: 56px;
-  border-radius: 4px;
-  padding: 12px 24px;
-  cursor: pointer;
-  font-weight: 600;
-}
-
-.report-data-row {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 24px;
-  border-top: 1px solid var(--line);
   margin: 0;
-  padding: 18px 24px;
-  background: #fafafa;
+  color: inherit;
+  font-size: 0.92rem;
+  font-weight: 400;
+  overflow-wrap: anywhere;
 }
 
-.report-data-row h3 {
-  margin: 0 0 3px;
-  font-size: 0.95rem;
-  font-weight: 600;
-}
-
-.report-data-row p {
-  margin: 0;
-  color: var(--muted);
-  font-size: 0.82rem;
-}
-
-.primary-download,
-.secondary-download {
-  border: 1px solid var(--tue-red);
-  border-radius: 4px;
+#surveyElement .primary-download,
+#surveyElement .secondary-download {
   cursor: pointer;
-  font-weight: 600;
+  box-shadow: none;
 }
 
-.primary-download {
+#surveyElement .primary-download {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 10px;
   min-height: 48px;
   padding: 11px 20px;
+  border: 1px solid var(--tue-red);
+  border-radius: 6px;
   background: var(--tue-red);
   color: #ffffff;
+  font-size: 1rem;
+  font-weight: 600;
 }
 
-.primary-download:hover:not(:disabled) {
+#surveyElement .primary-download:hover:not(:disabled) {
   background: var(--tue-red-dark);
 }
 
@@ -340,19 +311,28 @@ select {
   stroke-width: 1.8;
 }
 
-.secondary-download {
-  min-height: 44px;
-  padding: 9px 18px;
-  background: var(--paper);
-  color: var(--tue-red);
+#surveyElement .secondary-download {
+  display: block;
+  width: fit-content;
+  margin-top: 12px;
+  padding: 3px 0;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  font-size: 0.92rem;
+  font-weight: 400;
+  line-height: 1.45;
+  text-align: left;
+  text-decoration: underline;
+  text-underline-offset: 2px;
 }
 
-.secondary-download:hover:not(:disabled) {
-  background: rgba(200, 25, 25, 0.04);
+#surveyElement .secondary-download:hover:not(:disabled) {
+  color: var(--ink);
 }
 
-.primary-download:disabled,
-.secondary-download:disabled {
+#surveyElement .primary-download:disabled,
+#surveyElement .secondary-download:disabled {
   cursor: wait;
   opacity: 0.55;
 }
@@ -386,33 +366,19 @@ select {
     padding: 14px;
   }
 
-  .report-page__header {
-    padding: 22px 20px 18px;
+  #surveyElement .sd-progress-buttons {
+    padding: 8px 14px 0;
+  }
+
+  .report-page__content {
+    padding: 24px 20px 28px;
   }
 
   .report-page__header h2 {
-    font-size: 1.5rem;
+    font-size: 1.15rem;
   }
 
-  .report-file-card {
-    grid-template-columns: 1fr;
-    gap: 18px;
-    margin: 0 16px 24px;
-  }
-
-  .report-navigation {
-    margin-top: 14px;
-  }
-
-  .report-data-row {
-    grid-template-columns: 1fr;
-    gap: 14px;
-    margin: 0;
-    padding: 18px 16px;
-  }
-
-  .primary-download,
-  .secondary-download {
+  #surveyElement .primary-download {
     width: 100%;
   }
 }

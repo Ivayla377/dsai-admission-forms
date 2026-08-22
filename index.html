@@ -36,27 +36,33 @@
         <div id="surveyElement"></div>
       </main>
 
-      <div id="reportScreen" class="report-screen" hidden>
+      <template id="reportPageTemplate">
         <section
           id="completionActions"
           class="report-page"
           aria-live="polite"
         >
-          <header class="report-page__header">
-            <h2 id="reportTitle">Creating your application PDF</h2>
-            <p id="completionStatus" role="status">
-              Please wait while the PDF and embedded Output JSON are prepared.
-            </p>
-          </header>
-
-          <div class="report-file-card">
-            <div class="report-file-card__description">
-              <p id="pdfFilename" class="report-filename"></p>
-              <p>
-                Includes your completed form and an embedded machine-readable
-                copy of your answers.
+          <div class="report-page__content">
+            <header class="report-page__header">
+              <h2 id="reportTitle">Creating your application PDF</h2>
+              <p id="completionStatus" role="status">
+                Please wait while the PDF and embedded Output JSON are
+                prepared.
               </p>
+            </header>
+
+            <div class="report-file">
+              <svg
+                class="document-icon"
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+              >
+                <path d="M6 3h8l4 4v14H6V3Z" />
+                <path d="M14 3v5h4M9 12h6M9 16h6" />
+              </svg>
+              <span id="pdfFilename" class="report-filename"></span>
             </div>
+
             <button
               id="downloadPdf"
               class="primary-download"
@@ -72,33 +78,18 @@
               </svg>
               Download application PDF
             </button>
-          </div>
 
-          <div class="report-data-row">
-            <div>
-              <h3>Separate data copy</h3>
-              <p>
-                For your own records or troubleshooting. You do not need to
-                upload this file to OSIRIS.
-              </p>
-            </div>
             <button
               id="downloadJson"
               class="secondary-download"
               type="button"
               disabled
             >
-              Download Output JSON (optional)
+              Download output JSON (optional, for your records)
             </button>
           </div>
         </section>
-
-        <nav class="report-navigation" aria-label="Report navigation">
-          <button id="previousButton" class="report-previous-button" type="button">
-            Previous
-          </button>
-        </nav>
-      </div>
+      </template>
     </div>
 
     <script type="module" src="/src/main.js"></script>
