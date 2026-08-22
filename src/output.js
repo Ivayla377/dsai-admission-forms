@@ -18,14 +18,44 @@ export class OutputValidationError extends Error {
   }
 }
 
-export function buildOutput({ surveyData, formVersion, generatedAt = new Date() }) {
+export function buildOutput({
+  surveyData,
+  formDefinition,
+  formVersion,
+  generatedAt = new Date(),
+}) {
+  if (!formDefinition) {
+    throw new OutputValidationError(
+      "The Form JSON is required to build prerequisite coverage output.",
+    );
+  }
+
   const warnings = [];
   const personalInformation = surveyData.personal_info ?? {};
   const previousStudies = asArray(surveyData.previous_studies).map(
     (study, index) => normalizePreviousStudy(study, index, warnings),
   );
+  const courses = asArray(surveyData.relevant_courses).map((course, index) =>
+    normalizeCourse(course, index, warnings),
+  );
+  const prerequisiteCoverage = normalizePrerequisiteCoverage({
+    surveyData,
+    formDefinition,
+    warnings,
+  });
 
-  assertUniqueStudyReferences(previousStudies);
+  assertUniqueReferences(
+    previousStudies,
+    (study) => study.studyReference,
+    "study reference",
+  );
+  assertUniqueReferences(
+    courses,
+    (course) => course.courseReference,
+    "course reference",
+  );
+  assertCourseDegreeReferences(courses, previousStudies);
+  assertCoverageReferences(prerequisiteCoverage, courses);
 
   const output = {
     outputSchemaVersion: OUTPUT_SCHEMA_VERSION,
@@ -44,6 +74,8 @@ export function buildOutput({ surveyData, formVersion, generatedAt = new Date() 
       ),
     },
     previousStudies,
+    courses,
+    prerequisiteCoverage,
     generationWarnings: warnings,
   };
 
@@ -74,7 +106,7 @@ function normalizePreviousStudy(study, index, warnings) {
 
   return {
     studyReference: normalizeText(
-      `degree-${index + 1}`,
+      study.degree_ref || `degree-${index + 1}`,
       `${path}.studyReference`,
       warnings,
     ),
@@ -101,17 +133,221 @@ function normalizePreviousStudy(study, index, warnings) {
   };
 }
 
-function assertUniqueStudyReferences(previousStudies) {
+function normalizeCourse(course, index, warnings) {
+  const path = `courses[${index}]`;
+  const degreeReference = normalizeText(
+    course.degree_ref,
+    `${path}.degreeReference`,
+    warnings,
+  );
+  const courseCode = normalizeText(
+    course.course_code,
+    `${path}.courseCode`,
+    warnings,
+  );
+  const courseReference = `${degreeReference}::${courseCode}`;
+  const calculatedReference = normalizeText(
+    course.course_ref,
+    `${path}.courseReference`,
+    warnings,
+  );
+
+  if (calculatedReference && calculatedReference !== courseReference) {
+    throw new OutputValidationError(
+      `The calculated course reference "${calculatedReference}" does not match "${courseReference}".`,
+    );
+  }
+
+  return {
+    courseReference,
+    degreeReference,
+    courseTitle: normalizeText(
+      course.course_title,
+      `${path}.courseTitle`,
+      warnings,
+    ),
+    courseCode,
+    credits: Number(course.course_credits),
+    finalGrade: normalizeOptionalText(
+      course.final_grade,
+      `${path}.finalGrade`,
+      warnings,
+    ),
+    officialDescription: normalizeText(
+      course.official_course_description,
+      `${path}.officialDescription`,
+      warnings,
+    ),
+  };
+}
+
+function normalizePrerequisiteCoverage({
+  surveyData,
+  formDefinition,
+  warnings,
+}) {
+  return extractPrerequisiteRequirements(formDefinition).map(
+    (requirement, requirementIndex) => {
+      const path = `prerequisiteCoverage[${requirementIndex}]`;
+      const courseEvidence = asArray(
+        surveyData[requirement.evidenceQuestionName],
+      ).map((evidence, evidenceIndex) => ({
+        courseReference: normalizeText(
+          evidence.course_ref,
+          `${path}.courseEvidence[${evidenceIndex}].courseReference`,
+          warnings,
+        ),
+        topicsCovered: asArray(evidence.topics_covered).map(
+          (topic, topicIndex) =>
+            normalizeText(
+              topic,
+              `${path}.courseEvidence[${evidenceIndex}].topicsCovered[${topicIndex}]`,
+              warnings,
+            ),
+        ),
+        additionalExplanation: normalizeOptionalText(
+          evidence.additional_explanation,
+          `${path}.courseEvidence[${evidenceIndex}].additionalExplanation`,
+          warnings,
+        ),
+      }));
+
+      assertUniqueReferences(
+        courseEvidence,
+        (evidence) => evidence.courseReference,
+        `course reference for ${requirement.requirementTitle}`,
+      );
+
+      return {
+        requirementReference: requirement.requirementReference,
+        requirementTitle: normalizeText(
+          requirement.requirementTitle,
+          `${path}.requirementTitle`,
+          warnings,
+        ),
+        topics: requirement.topics,
+        courseEvidence,
+      };
+    },
+  );
+}
+
+function extractPrerequisiteRequirements(formDefinition) {
+  return asArray(formDefinition.pages).flatMap((page) =>
+    asArray(page.elements)
+      .filter(
+        (element) =>
+          element.type === "panel" && element.name?.startsWith("requirement_"),
+      )
+      .map(extractRequirementDefinition),
+  );
+}
+
+function extractRequirementDefinition(requirementPanel) {
+  const evidenceQuestion = asArray(requirementPanel.elements).find(
+    (element) =>
+      element.type === "paneldynamic" && element.name?.startsWith("evidence_"),
+  );
+
+  if (!evidenceQuestion) {
+    throw new OutputValidationError(
+      `Requirement panel "${requirementPanel.name}" must contain an evidence Dynamic Panel.`,
+    );
+  }
+
+  const topicsQuestion = asArray(evidenceQuestion.templateElements).find(
+    (element) => element.name === "topics_covered",
+  );
+
+  return {
+    requirementReference: stripNameAffixes(
+      requirementPanel.name,
+      "requirement_",
+    ),
+    requirementTitle: requirementPanel.title,
+    evidenceQuestionName: evidenceQuestion.name,
+    topics: asArray(topicsQuestion?.choices).map(getChoiceValue),
+  };
+}
+
+function getChoiceValue(choice) {
+  if (choice && typeof choice === "object") {
+    return String(choice.value ?? choice.text ?? "").trim();
+  }
+  return String(choice ?? "").trim();
+}
+
+function stripNameAffixes(value, prefix, suffix = "") {
+  let result = String(value ?? "");
+
+  if (prefix && result.startsWith(prefix)) {
+    result = result.slice(prefix.length);
+  }
+  if (suffix && result.endsWith(suffix)) {
+    result = result.slice(0, -suffix.length);
+  }
+
+  return result;
+}
+
+function assertUniqueReferences(items, getReference, label) {
   const seen = new Set();
 
-  for (const study of previousStudies) {
-    const normalizedReference = study.studyReference.toLocaleLowerCase("en-US");
+  for (const item of items) {
+    const reference = getReference(item);
+    const normalizedReference = reference.toLocaleLowerCase("en-US");
     if (seen.has(normalizedReference)) {
       throw new OutputValidationError(
-        `The study reference "${study.studyReference}" is used more than once.`,
+        `The ${label} "${reference}" is used more than once.`,
       );
     }
     seen.add(normalizedReference);
+  }
+}
+
+function assertCourseDegreeReferences(courses, previousStudies) {
+  const degreeReferences = new Set(
+    previousStudies.map((study) => study.studyReference),
+  );
+
+  for (const course of courses) {
+    if (!degreeReferences.has(course.degreeReference)) {
+      throw new OutputValidationError(
+        `Course "${course.courseReference}" refers to an unknown degree "${course.degreeReference}".`,
+      );
+    }
+  }
+}
+
+function assertCoverageReferences(prerequisiteCoverage, courses) {
+  const courseReferences = new Set(
+    courses.map((course) => course.courseReference),
+  );
+
+  for (const requirement of prerequisiteCoverage) {
+    const availableTopics = new Set(requirement.topics);
+
+    for (const evidence of requirement.courseEvidence) {
+      if (!courseReferences.has(evidence.courseReference)) {
+        throw new OutputValidationError(
+          `Requirement "${requirement.requirementTitle}" refers to an unknown course "${evidence.courseReference}".`,
+        );
+      }
+
+      if (availableTopics.size > 0 && evidence.topicsCovered.length === 0) {
+        throw new OutputValidationError(
+          `Select at least one topic for "${requirement.requirementTitle}" and course "${evidence.courseReference}".`,
+        );
+      }
+
+      for (const topic of evidence.topicsCovered) {
+        if (!availableTopics.has(topic)) {
+          throw new OutputValidationError(
+            `Topic "${topic}" is not defined for "${requirement.requirementTitle}".`,
+          );
+        }
+      }
+    }
   }
 }
 
@@ -128,6 +364,11 @@ function normalizeText(value, path, warnings) {
   }
 
   return wellFormed.trim();
+}
+
+function normalizeOptionalText(value, path, warnings) {
+  const normalized = normalizeText(value, path, warnings);
+  return normalized || null;
 }
 
 function toWellFormedString(value) {

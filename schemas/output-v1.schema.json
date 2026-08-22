@@ -11,6 +11,8 @@
     "generatedAt",
     "applicant",
     "previousStudies",
+    "courses",
+    "prerequisiteCoverage",
     "generationWarnings"
   ],
   "properties": {
@@ -34,6 +36,21 @@
       "maxItems": 2,
       "items": {
         "$ref": "#/$defs/previousStudy"
+      }
+    },
+    "courses": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 30,
+      "items": {
+        "$ref": "#/$defs/course"
+      }
+    },
+    "prerequisiteCoverage": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/prerequisiteRequirement"
       }
     },
     "generationWarnings": {
@@ -142,6 +159,120 @@
           }
         }
       ]
+    },
+    "course": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "courseReference",
+        "degreeReference",
+        "courseTitle",
+        "courseCode",
+        "credits",
+        "finalGrade",
+        "officialDescription"
+      ],
+      "properties": {
+        "courseReference": {
+          "type": "string",
+          "minLength": 4,
+          "maxLength": 400
+        },
+        "degreeReference": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]{0,39}$"
+        },
+        "courseTitle": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 250
+        },
+        "courseCode": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100
+        },
+        "credits": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 10000
+        },
+        "finalGrade": {
+          "type": ["string", "null"],
+          "maxLength": 120
+        },
+        "officialDescription": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 20000
+        }
+      }
+    },
+    "prerequisiteRequirement": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "requirementReference",
+        "requirementTitle",
+        "topics",
+        "courseEvidence"
+      ],
+      "properties": {
+        "requirementReference": {
+          "type": "string",
+          "pattern": "^[a-z0-9]+(?:_[a-z0-9]+)*$"
+        },
+        "requirementTitle": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 250
+        },
+        "topics": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500
+          }
+        },
+        "courseEvidence": {
+          "type": "array",
+          "maxItems": 30,
+          "items": {
+            "$ref": "#/$defs/courseEvidence"
+          }
+        }
+      }
+    },
+    "courseEvidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "courseReference",
+        "topicsCovered",
+        "additionalExplanation"
+      ],
+      "properties": {
+        "courseReference": {
+          "type": "string",
+          "minLength": 4,
+          "maxLength": 400
+        },
+        "topicsCovered": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500
+          }
+        },
+        "additionalExplanation": {
+          "type": ["string", "null"],
+          "maxLength": 4000
+        }
+      }
     },
     "generationWarning": {
       "type": "object",

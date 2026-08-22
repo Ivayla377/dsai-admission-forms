@@ -16,6 +16,9 @@ const CREDIT_SYSTEM_LABELS = Object.freeze({
 export function buildPdfDefinition(output, { logoUrl = "" } = {}) {
   const outputJson = serializeOutputJson(output);
   const attachmentName = `dsai-admission-${output.formVersion}.json`;
+  const studiesByReference = new Map(
+    output.previousStudies.map((study) => [study.studyReference, study]),
+  );
 
   return {
     info: {
@@ -56,6 +59,14 @@ export function buildPdfDefinition(output, { logoUrl = "" } = {}) {
       ...output.previousStudies.flatMap((study, index) =>
         buildPreviousStudySection(study, index),
       ),
+      {
+        text: "Relevant courses",
+        style: "sectionHeading",
+      },
+      ...output.courses.flatMap((course, index) =>
+        buildCourseSection(course, index, studiesByReference),
+      ),
+      ...buildPrerequisiteCoverage(output),
       {
         text: "Embedded machine-readable information",
         style: "sectionHeading",
@@ -104,11 +115,33 @@ export function buildPdfDefinition(output, { logoUrl = "" } = {}) {
         color: "#111111",
         margin: [0, 18, 0, 8],
       },
+      subsectionHeading: {
+        fontSize: 10.5,
+        bold: true,
+        color: "#111111",
+        margin: [0, 4, 0, 6],
+      },
       degreeHeading: {
         fontSize: 10.5,
         bold: true,
         color: "#0a7d61",
         margin: [0, 9, 0, 5],
+      },
+      courseHeading: {
+        fontSize: 10.5,
+        bold: true,
+        color: "#0a7d61",
+        margin: [0, 10, 0, 5],
+      },
+      requirementHeading: {
+        fontSize: 11,
+        bold: true,
+        color: "#111111",
+        margin: [0, 12, 0, 5],
+      },
+      muted: {
+        color: "#5f6368",
+        italics: true,
       },
       tableLabel: {
         bold: true,
@@ -186,37 +219,268 @@ function buildReportHeading(output, logoUrl) {
 }
 
 function buildPreviousStudySection(study, index) {
-  const creditSystem =
-    study.creditSystem === "other"
-      ? study.creditSystemOther
-      : CREDIT_SYSTEM_LABELS[study.creditSystem] ?? study.creditSystem;
-
   return [
     {
       text: `Degree ${index + 1}: ${study.degreeProgrammeName}`,
       style: "degreeHeading",
     },
     detailsTable([
-      ["Study reference", study.studyReference],
       ["Degree programme", study.degreeProgrammeName],
       ["Graduation date", formatDate(study.graduationDate)],
       ["University", study.universityName],
       ["Location", `${study.city}, ${study.country}`],
       ["Total degree credits", String(study.totalDegreeCredits)],
-      ["Credit system", creditSystem],
     ]),
   ];
 }
 
-function detailsTable(rows) {
-  return {
-    table: {
-      widths: [135, "*"],
-      body: rows.map(([label, value]) => [
-        { text: label, style: "tableLabel", fillColor: "#f4f4f4" },
-        { text: value || "—" },
-      ]),
+function buildCourseSection(course, index, studiesByReference) {
+  const study = studiesByReference.get(course.degreeReference);
+  const degreeLabel = study
+    ? `${study.degreeProgrammeName} — ${study.universityName}`
+    : course.degreeReference;
+  return [
+    {
+      text: `Course ${index + 1}: ${course.courseCode} ${course.courseTitle}`,
+      style: "courseHeading",
     },
+    detailsTable([
+      ["Degree", degreeLabel],
+      [
+        "Course credits",
+        formatCourseCredits(course, study),
+      ],
+      ["Final grade", course.finalGrade],
+      ["Official course description", course.officialDescription],
+    ]),
+  ];
+}
+
+function formatCourseCredits(course, study) {
+  if (!study) {
+    return String(course.credits);
+  }
+
+  const creditSystem = getCreditSystemLabel(study);
+  return `${course.credits} / ${study.totalDegreeCredits} ${creditSystem}`;
+}
+
+function getCreditSystemLabel(study) {
+  if (study.creditSystem === "other") {
+    return study.creditSystemOther;
+  }
+
+  return CREDIT_SYSTEM_LABELS[study.creditSystem] ?? study.creditSystem;
+}
+
+function buildPrerequisiteCoverage(output) {
+  const coursesByReference = new Map(
+    output.courses.map((course, index) => [
+      course.courseReference,
+      { course, courseNumber: index + 1 },
+    ]),
+  );
+
+  return [
+    {
+      stack: [
+        {
+          text: "Prerequisite coverage",
+          style: "sectionHeading",
+        },
+        {
+          text: "Overview",
+          style: "subsectionHeading",
+        },
+        buildCoverageOverviewTable(output.prerequisiteCoverage),
+      ],
+      unbreakable: true,
+    },
+    ...output.prerequisiteCoverage.flatMap((requirement, index) =>
+      buildRequirementSection(requirement, index + 1, coursesByReference),
+    ),
+  ];
+}
+
+function buildCoverageOverviewTable(requirements) {
+  const rows = requirements.map((requirement, index) => [
+    {
+      text: `${index + 1}. ${requirement.requirementTitle}`,
+      style: "tableLabel",
+      fillColor: "#f4f4f4",
+    },
+    toTableCell(getCoverageStatus(requirement)),
+  ]);
+
+  return standardTable(["*", 155], rows);
+}
+
+function getCoverageStatus(requirement) {
+  const coveredTopics = new Set(
+    requirement.courseEvidence.flatMap((evidence) => evidence.topicsCovered),
+  );
+  const coveredCount = requirement.topics.filter((topic) =>
+    coveredTopics.has(topic),
+  ).length;
+  const topicCount = requirement.topics.length;
+
+  if (coveredCount === 0 || topicCount === 0) {
+    return "Not covered";
+  }
+  if (coveredCount === topicCount) {
+    return `Covered (${coveredCount} of ${topicCount})`;
+  }
+  return `Partially covered (${coveredCount} of ${topicCount})`;
+}
+
+function buildRequirementSection(
+  requirement,
+  requirementNumber,
+  coursesByReference,
+) {
+  const heading = {
+    text: `${requirementNumber}. ${requirement.requirementTitle}`,
+    style: "requirementHeading",
+  };
+  const knowledgeTable = buildRequiredKnowledgeTable(
+    requirement,
+    coursesByReference,
+  );
+  const explanations = buildAdditionalExplanations(
+    requirement,
+    coursesByReference,
+  );
+
+  if (!requirement.courseEvidence.length) {
+    return [
+      {
+        stack: [
+          heading,
+          knowledgeTable,
+          {
+            text: "No relevant course selected.",
+            style: "muted",
+            margin: [0, 0, 0, 4],
+          },
+        ],
+        unbreakable: true,
+      },
+    ];
+  }
+
+  return [
+    {
+      stack: [heading, knowledgeTable],
+      unbreakable: true,
+    },
+    ...explanations,
+  ];
+}
+
+function buildRequiredKnowledgeTable(requirement, coursesByReference) {
+  const rows = requirement.topics.map((topic) => [
+    toTableCell(topic),
+    buildCoveredByCell(requirement.courseEvidence, topic, coursesByReference),
+  ]);
+
+  return standardTable(
+    ["*", 140],
+    [
+      [
+        {
+          text: "Required knowledge",
+          style: "tableLabel",
+          fillColor: "#f4f4f4",
+        },
+        {
+          text: "Covered by",
+          style: "tableLabel",
+          fillColor: "#f4f4f4",
+        },
+      ],
+      ...rows,
+    ],
+  );
+}
+
+function buildCoveredByCell(courseEvidence, topic, coursesByReference) {
+  const coveredByCourses = courseEvidence
+    .filter((evidence) => evidence.topicsCovered.includes(topic))
+    .map((evidence) => {
+      const courseEntry = coursesByReference.get(evidence.courseReference);
+      return courseEntry
+        ? formatCoveredByCourse(courseEntry)
+        : evidence.courseReference;
+    });
+
+  if (!coveredByCourses.length) {
+    return toTableCell("");
+  }
+
+  return {
+    text: coveredByCourses.flatMap((course, index) => {
+      if (typeof course === "string") {
+        return [
+          ...(index > 0 ? ["\n"] : []),
+          { text: course, bold: true, color: "#0a7d61" },
+        ];
+      }
+
+      return [
+        ...(index > 0 ? ["\n"] : []),
+        { text: course.label, bold: true, color: "#0a7d61" },
+        { text: course.details, color: "#5f6368" },
+      ];
+    }),
+  };
+}
+
+function formatCoveredByCourse({ course, courseNumber }) {
+  const grade = course.finalGrade || "not provided";
+  return {
+    label: `Course ${courseNumber}`,
+    details: ` · ${course.credits} ECTS · grade ${grade}`,
+  };
+}
+
+function buildAdditionalExplanations(requirement, coursesByReference) {
+  return requirement.courseEvidence.flatMap((evidence) => {
+    if (!evidence.additionalExplanation) {
+      return [];
+    }
+
+    const courseEntry = coursesByReference.get(evidence.courseReference);
+    const courseLabel = courseEntry
+      ? `Course ${courseEntry.courseNumber}`
+      : evidence.courseReference;
+
+    return [
+      {
+        text: `Additional explanation \u2014 ${courseLabel}`,
+        style: "tableLabel",
+        margin: [0, 5, 0, 2],
+      },
+      {
+        text: evidence.additionalExplanation,
+        margin: [0, 0, 0, 5],
+      },
+    ];
+  });
+}
+
+function detailsTable(rows) {
+  return standardTable(
+    [135, "*"],
+    rows.map(([label, value]) => [
+      { text: label, style: "tableLabel", fillColor: "#f4f4f4" },
+      toTableCell(value),
+    ]),
+  );
+}
+
+function standardTable(widths, body) {
+  return {
+    table: { widths, body },
     layout: {
       hLineColor: () => "#d7d7d7",
       vLineColor: () => "#d7d7d7",
@@ -227,6 +491,14 @@ function detailsTable(rows) {
     },
     margin: [0, 0, 0, 6],
   };
+}
+
+function toTableCell(value) {
+  if (value && typeof value === "object") {
+    return value;
+  }
+
+  return { text: value || "—" };
 }
 
 function buildWarnings(warnings) {
