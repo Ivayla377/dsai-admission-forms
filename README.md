@@ -8,7 +8,7 @@ for the applicant/DAB report and Vite for the standalone HTML build.
 
 No installation is needed to fill in a form. Download the form, then open the downloaded HTML file in a browser such as Microsoft Edge, Google Chrome or Firefox.
 
-- [Download the DS&AI additional admission form](https://github.com/Ivayla377/dsai-admission-forms/releases/latest/download/2025-2026.html)
+- [Download the DS&AI additional admission form](https://github.com/Ivayla377/dsai-admission-forms/releases/latest/download/dsai-admission-2025-2026.html)
 
 ## Development
 
