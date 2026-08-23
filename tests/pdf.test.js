@@ -35,6 +35,19 @@ test("the application PDF has the user-facing admissions filename", () => {
   );
 });
 
+test("generated timestamps use Amsterdam time and its seasonal abbreviation", () => {
+  const summerText = collectText(buildPdfDefinition(output).content).join("\n");
+  const winterText = collectText(
+    buildPdfDefinition({
+      ...output,
+      generatedAt: "2026-01-18T10:00:00.000Z",
+    }).content,
+  ).join("\n");
+
+  assert.match(summerText, /Generated: 18\/08\/2026, 12:00 CEST/);
+  assert.match(winterText, /Generated: 18\/01\/2026, 11:00 CET/);
+});
+
 test("the PDF definition includes courses and normalized prerequisite coverage", () => {
   const requirement = getFirstRequirementWithTopics(formDefinition);
   const topic = getChoiceValue(requirement.topics[0]);
@@ -72,6 +85,7 @@ test("the PDF definition includes courses and normalized prerequisite coverage",
   );
 
   assert.match(renderedText, /Relevant courses/);
+  assert.match(renderedText, /Generated: 18\/08\/2026, 12:00 CEST/);
   assert.match(renderedText, /Course 1: MATH101 Linear Algebra/);
   assert.doesNotMatch(renderedText, /MATH101 — Linear Algebra/);
   assert.match(
@@ -149,6 +163,7 @@ test("the PDF definition includes courses and normalized prerequisite coverage",
       "Total degree credits",
     ],
   );
+  assert.equal(studyDetailsTable.table.body[1][1].text, "07/07/2026");
   assert.deepEqual(
     courseDetailsTable.table.body.map(([label]) => label.text),
     [

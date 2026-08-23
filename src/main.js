@@ -242,6 +242,14 @@ function addRequirementKnowledgeDescriptions(model) {
 function setBranding() {
   const logo = requiredElement("tueLogo");
   logo.src = tueLogoUrl;
+
+  const favicon =
+    document.querySelector('link[rel~="icon"]') ??
+    document.head.appendChild(document.createElement("link"));
+  favicon.setAttribute("rel", "icon");
+  favicon.setAttribute("type", "image/jpeg");
+  favicon.setAttribute("href", tueLogoUrl);
+
   requiredElement("appTitle").textContent = formDefinition.title;
   requiredElement("appYear").textContent = FORM_VERSION;
 }

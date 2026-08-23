@@ -91,8 +91,20 @@ test("previous studies is a required Dynamic Panel limited to two degrees", () =
   );
   assert.equal(applicantQuestions[3].startWithNewLine, false);
   assert.equal(applicantQuestions[5].startWithNewLine, false);
+  assert.equal(applicantQuestions[4].inputType, "text");
+  assert.equal(applicantQuestions[4].maskType, "datetime");
+  assert.equal(applicantQuestions[4].maskSettings.pattern, "dd/mm/yyyy");
+  assert.equal(
+    applicantQuestions[4].maskSettings.getMaskedValue("2026-07-07"),
+    "07/07/2026",
+  );
+  assert.equal(
+    applicantQuestions[4].maskSettings.getUnmaskedValue("07/07/2026"),
+    "2026-07-07",
+  );
   assert.equal(applicantQuestions[5].inputType, "text");
   assert.equal(applicantQuestions[5].maskType, "numeric");
+  assert.equal(applicantQuestions[5].inputTextAlignment, "left");
   assert.equal(applicantQuestions[5].maskSettings.min, 1);
   assert.equal(applicantQuestions[5].maskSettings.max, 10000);
   assert.equal(applicantQuestions[5].maskSettings.precision, 1);
@@ -184,6 +196,7 @@ test("relevant courses is a Dynamic Panel with copied degree choices", () => {
   assert.equal(courseCredits.startWithNewLine, false);
   assert.equal(courseCredits.inputType, "text");
   assert.equal(courseCredits.maskType, "numeric");
+  assert.equal(courseCredits.inputTextAlignment, "left");
   assert.equal(courseCredits.maskSettings.min, 0.1);
   assert.equal(courseCredits.maskSettings.max, 10000);
   assert.equal(courseCredits.maskSettings.precision, 1);

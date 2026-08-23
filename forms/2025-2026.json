@@ -133,7 +133,12 @@
               "name": "graduation_date",
               "title": "Expected or completed graduation date",
               "description": "Enter the actual date or your best current estimate.",
-              "inputType": "date",
+              "inputType": "text",
+              "maskType": "datetime",
+              "maskSettings": {
+                "pattern": "dd/mm/yyyy"
+              },
+              "placeholder": "DD/MM/YYYY",
               "isRequired": true,
               "width": "50%"
             },
@@ -148,6 +153,7 @@
                 "max": 10000,
                 "precision": 1
               },
+              "inputTextAlignment": "left",
               "placeholder": "For example, 180",
               "isRequired": true,
               "width": "50%",
@@ -232,6 +238,7 @@
                 "max": 10000,
                 "precision": 1
               },
+              "inputTextAlignment": "left",
               "placeholder": "For example, 5",
               "isRequired": true,
               "width": "45%",
