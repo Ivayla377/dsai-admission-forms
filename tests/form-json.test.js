@@ -4,6 +4,7 @@ import test from "node:test";
 import { Model } from "survey-core";
 
 import formDefinition from "../forms/2025-2026.json" with { type: "json" };
+import { addPrerequisiteCourseUsageValidation } from "../src/prerequisite-validation.js";
 import fixture from "./fixtures/synthetic-application.json" with { type: "json" };
 
 test("the 2025-2026 form loads and round-trips through SurveyJS", () => {
@@ -16,15 +17,14 @@ test("the 2025-2026 form loads and round-trips through SurveyJS", () => {
     (survey.jsonErrors ?? []).map((error) => error.message),
     [],
   );
-  assert.equal(survey.pages.length, 6);
+  assert.equal(survey.pages.length, 5);
   assert.deepEqual(
     survey.pages.map((page) => page.name),
     [
       "applicant_details",
       "previous_studies_page",
       "relevant_courses_page",
-      "prerequisite_foundations_page",
-      "prerequisite_software_data_project_page",
+      "prerequisite_coverage_page",
       "application_report",
     ],
   );
@@ -180,6 +180,11 @@ test("relevant courses is a Dynamic Panel with copied degree choices", () => {
   const courseCode = applicantQuestions.find(
     (question) => question.name === "course_code",
   );
+  assert.equal(
+    courseTitle.description,
+    "Enter the course title only; do not include the course code.",
+  );
+  assert.equal(courseCode.description, "Enter the course code only.");
   assert.equal(courseTitle.width, "65%");
   assert.equal(courseCode.width, "30%");
   assert.equal(courseCode.startWithNewLine, false);
@@ -261,7 +266,11 @@ test("requirement panels contain only declarative course evidence logic", () => 
     assert.ok(evidence, `${requirement.name} should contain an evidence panel`);
     assert.equal(evidence.panelCount, 0);
     assert.equal(evidence.minPanelCount, 0);
-    assert.equal(evidence.maxPanelCount, 30);
+    assert.equal(evidence.maxPanelCount, 3);
+    assert.equal(
+      evidence.noEntriesText,
+      "Click the button below to add an entry.",
+    );
     assert.equal(evidence.panelsState, "firstExpanded");
     assert.equal(evidence.confirmDelete, true);
     assert.equal(evidence.addPanelText, "Add a relevant course");
@@ -290,17 +299,20 @@ test("requirement panels contain only declarative course evidence logic", () => 
   }
 });
 
-test("coverage pages contain the shared guidance", () => {
+test("all requirements share one prerequisite coverage page", () => {
   const survey = createSurvey();
-  const coveragePages = survey.pages.filter((page) =>
-    page.name.startsWith("prerequisite_"),
-  );
+  const coveragePage = survey.getPageByName("prerequisite_coverage_page");
 
-  assert.equal(coveragePages.length, 2);
+  assert.ok(coveragePage);
+  assert.equal(coveragePage.title, "Prerequisite coverage");
   assert.ok(
-    coveragePages.every((page) =>
-      page.description.includes("If you have no relevant course"),
-    ),
+    coveragePage.description.includes("If you have no relevant course"),
+  );
+  assert.equal(
+    coveragePage.elements.filter((element) =>
+      element.name.startsWith("requirement_"),
+    ).length,
+    10,
   );
 });
 
@@ -358,6 +370,44 @@ test("degree and course dropdowns copy calculated values from earlier pages", ()
 
   course.value = "degree-1::COURSE101";
   assert.equal(topics.isVisible, true);
+});
+
+test("a course can support at most three prerequisites", () => {
+  const survey = createSurvey();
+  addPrerequisiteCourseUsageValidation(survey);
+  survey.data = {
+    relevant_courses: [
+      { course_ref: "degree-1::COURSE-X", course_label: "COURSE-X Course X" },
+      { course_ref: "degree-1::COURSE-Y", course_label: "COURSE-Y Course Y" },
+    ],
+  };
+
+  const courseQuestions = getRequirementPanels(survey)
+    .slice(0, 4)
+    .map((requirement) => {
+      const evidence = requirement.elements.find(
+        (element) => element.getType() === "paneldynamic",
+      );
+      evidence.addPanel();
+      return evidence.panels[0].getQuestionByName("course_ref");
+    });
+
+  for (const question of courseQuestions) {
+    question.value = "degree-1::COURSE-X";
+    question.validate(true);
+  }
+
+  assert.ok(
+    courseQuestions.slice(0, 3).every((question) => question.errors.length === 0),
+  );
+  assert.deepEqual(
+    courseQuestions[3].errors.map((error) => error.text),
+    ["A course can be used for at most three prerequisites."],
+  );
+
+  courseQuestions[0].value = "degree-1::COURSE-Y";
+
+  assert.equal(courseQuestions[3].errors.length, 0);
 });
 
 test("personal information matches the shared TU/e form structure", () => {

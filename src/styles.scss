@@ -177,6 +177,73 @@ select {
   margin-top: 12px;
 }
 
+// Evidence lists start with a centered prompt, but use less vertical space
+// than SurveyJS's generic empty-state placeholder.
+#surveyElement [data-name^="evidence_"] .sd-paneldynamic__placeholder {
+  align-items: center;
+  gap: 0;
+  justify-content: center;
+  min-height: 104px;
+  text-align: center;
+}
+
+#surveyElement
+  [data-name^="evidence_"].sd-question--empty.sd-question--paneldynamic
+  > .sd-question__content {
+  padding-bottom: 12px;
+}
+
+#surveyElement
+  [data-name^="evidence_"]
+  .sd-paneldynamic__placeholder
+  .sd-paneldynamic__add-btn {
+  margin-top: 2px;
+}
+
+// Once evidence exists, keep the footer action vertically centered between
+// the last panel boundary and the bottom of the evidence list.
+#surveyElement
+  [data-name^="evidence_"]
+  .sd-paneldynamic__buttons-container {
+  padding: 12px 0;
+}
+
+#surveyElement
+  [data-name^="evidence_"]
+  .sd-paneldynamic__buttons-container
+  .sd-paneldynamic__add-btn {
+  margin-top: 0;
+}
+
+// Match the relevant-course footer to the compact, vertically balanced
+// evidence-list footers without changing the degree-panel controls.
+#surveyElement
+  [data-name="relevant_courses"]
+  .sd-paneldynamic__buttons-container {
+  padding: 12px 0;
+}
+
+#surveyElement
+  [data-name="relevant_courses"]
+  .sd-paneldynamic__buttons-container
+  .sd-paneldynamic__add-btn {
+  margin-top: 0;
+}
+
+// Use the same compact footer treatment for the degree list on page 2.
+#surveyElement
+  [data-name="previous_studies"]
+  .sd-paneldynamic__buttons-container {
+  padding: 12px 0;
+}
+
+#surveyElement
+  [data-name="previous_studies"]
+  .sd-paneldynamic__buttons-container
+  .sd-paneldynamic__add-btn {
+  margin-top: 0;
+}
+
 // SurveyJS's expand animation can restore this separator after a panel has
 // been collapsed once. Degree panels do not need an internal header rule.
 #surveyElement

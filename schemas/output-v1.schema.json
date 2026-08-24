@@ -239,7 +239,7 @@
         },
         "courseEvidence": {
           "type": "array",
-          "maxItems": 30,
+          "maxItems": 3,
           "items": {
             "$ref": "#/$defs/courseEvidence"
           }

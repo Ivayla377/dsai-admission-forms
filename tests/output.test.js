@@ -217,6 +217,83 @@ test("prerequisite evidence must refer to a course in the catalogue", () => {
   );
 });
 
+test("a prerequisite cannot contain more than three relevant courses", () => {
+  const requirement = getRequirements(formDefinition)[0];
+  const selectedTopic = getChoiceValue(requirement.topics[0]);
+  const relevantCourses = Array.from({ length: 4 }, (_, index) => {
+    const courseCode = `MATH10${index + 1}`;
+
+    return {
+      ...fixture.relevant_courses[0],
+      course_code: courseCode,
+      course_ref: `degree-1::${courseCode}`,
+      course_title: `Mathematics course ${index + 1}`,
+    };
+  });
+  const excessiveEvidenceData = {
+    ...fixture,
+    relevant_courses: relevantCourses,
+    [requirement.evidenceQuestionName]: relevantCourses.map((course) => ({
+      course_ref: course.course_ref,
+      topics_covered: [selectedTopic],
+    })),
+  };
+
+  assert.throws(
+    () =>
+      buildOutput({
+        surveyData: excessiveEvidenceData,
+        formDefinition,
+        formVersion: "2025-2026",
+        generatedAt,
+      }),
+    /contains more than 3 relevant courses/i,
+  );
+});
+
+test("a course cannot support more than three prerequisites", () => {
+  const requirements = getRequirements(formDefinition).slice(0, 4);
+  const courseReference = fixture.relevant_courses[0].course_ref;
+  const evidenceByRequirement = Object.fromEntries(
+    requirements.map((requirement) => [
+      requirement.evidenceQuestionName,
+      [
+        {
+          course_ref: courseReference,
+          topics_covered: [getChoiceValue(requirement.topics[0])],
+        },
+      ],
+    ]),
+  );
+  const firstThreeUses = {
+    ...fixture,
+    ...Object.fromEntries(Object.entries(evidenceByRequirement).slice(0, 3)),
+  };
+  const fourthUse = {
+    ...fixture,
+    ...evidenceByRequirement,
+  };
+
+  assert.doesNotThrow(() =>
+    buildOutput({
+      surveyData: firstThreeUses,
+      formDefinition,
+      formVersion: "2025-2026",
+      generatedAt,
+    }),
+  );
+  assert.throws(
+    () =>
+      buildOutput({
+        surveyData: fourthUse,
+        formDefinition,
+        formVersion: "2025-2026",
+        generatedAt,
+      }),
+    /used for more than 3 prerequisites/i,
+  );
+});
+
 test("invalid Unicode code units are replaced and reported", () => {
   const invalidCodeUnit = String.fromCharCode(0xd800);
   const unicodeData = {

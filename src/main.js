@@ -8,7 +8,9 @@ import tueLogoUrl from "../tue_logo.jpg";
 
 import {
   buildOutput,
-  downloadOutputJson,
+  // Debug-only standalone JSON download. Uncomment this import and the other
+  // downloadJson sections below together with the button in index.html.
+  // downloadOutputJson,
   OutputValidationError,
 } from "./output.js";
 import {
@@ -16,6 +18,7 @@ import {
   downloadPdfBlob,
   getPdfFilename,
 } from "./pdf.js";
+import { addPrerequisiteCourseUsageValidation } from "./prerequisite-validation.js";
 import "./styles.scss";
 
 const FORM_VERSION = __FORM_VERSION__;
@@ -40,6 +43,7 @@ survey.applyTheme(surveyTheme);
 survey.focusFirstQuestionAutomatic = false;
 survey.showCompleteButton = false;
 addRequirementKnowledgeDescriptions(survey);
+addPrerequisiteCourseUsageValidation(survey);
 
 const reportTemplate = requiredElement("reportPageTemplate");
 
@@ -69,9 +73,10 @@ document.addEventListener("click", (event) => {
     downloadPdfBlob(preparedPdfBlob, preparedOutput);
   }
 
-  if (event.target.closest("#downloadJson") && preparedOutput) {
-    downloadOutputJson(preparedOutput);
-  }
+  // Debug-only standalone JSON download.
+  // if (event.target.closest("#downloadJson") && preparedOutput) {
+  //   downloadOutputJson(preparedOutput);
+  // }
 });
 
 survey.render(requiredElement("surveyElement"));
@@ -144,7 +149,8 @@ async function generateReport(model, generationId) {
     reportView.completionStatus.textContent =
       "Download the PDF, review the information, and upload the same PDF to OSIRIS.";
     reportView.downloadPdfButton.disabled = false;
-    reportView.downloadJsonButton.disabled = false;
+    // Debug-only standalone JSON download.
+    // reportView.downloadJsonButton.disabled = false;
     reportView.completionActions.scrollIntoView({
       behavior: "smooth",
       block: "start",
@@ -164,7 +170,8 @@ function mountReportView() {
     completionStatus: requiredElement("completionStatus"),
     pdfFilename: requiredElement("pdfFilename"),
     downloadPdfButton: requiredElement("downloadPdf"),
-    downloadJsonButton: requiredElement("downloadJson"),
+    // Debug-only standalone JSON download.
+    // downloadJsonButton: requiredElement("downloadJson"),
   };
 }
 
@@ -176,7 +183,8 @@ function showPreparingState(reportView) {
   reportView.pdfFilename.textContent =
     `DSAI-additional-admissions-${FORM_VERSION}.pdf`;
   reportView.downloadPdfButton.disabled = true;
-  reportView.downloadJsonButton.disabled = true;
+  // Debug-only standalone JSON download.
+  // reportView.downloadJsonButton.disabled = true;
 }
 
 function showGenerationError(reportView, error) {
@@ -184,7 +192,8 @@ function showGenerationError(reportView, error) {
   reportView.reportTitle.textContent =
     "Your application PDF could not be created";
   reportView.downloadPdfButton.disabled = true;
-  reportView.downloadJsonButton.disabled = !preparedOutput;
+  // Debug-only standalone JSON download.
+  // reportView.downloadJsonButton.disabled = !preparedOutput;
 
   if (error instanceof OutputValidationError) {
     reportView.completionStatus.textContent = error.message;

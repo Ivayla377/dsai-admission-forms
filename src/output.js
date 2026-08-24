@@ -2,6 +2,7 @@ import Ajv2020 from "ajv/dist/2020.js";
 import addFormats from "ajv-formats";
 
 import outputSchema from "../schemas/output-v1.schema.json" with { type: "json" };
+import { MAX_PREREQUISITE_USES_PER_COURSE } from "./prerequisite-validation.js";
 
 export const OUTPUT_SCHEMA_VERSION = "1";
 const ASSUMED_CREDIT_SYSTEM = "ects";
@@ -56,6 +57,7 @@ export function buildOutput({
   );
   assertCourseDegreeReferences(courses, previousStudies);
   assertCoverageReferences(prerequisiteCoverage, courses);
+  assertCourseUsageLimit(prerequisiteCoverage);
 
   const output = {
     outputSchemaVersion: OUTPUT_SCHEMA_VERSION,
@@ -189,9 +191,17 @@ function normalizePrerequisiteCoverage({
   return extractPrerequisiteRequirements(formDefinition).map(
     (requirement, requirementIndex) => {
       const path = `prerequisiteCoverage[${requirementIndex}]`;
-      const courseEvidence = asArray(
+      const evidenceItems = asArray(
         surveyData[requirement.evidenceQuestionName],
-      ).map((evidence, evidenceIndex) => ({
+      );
+
+      if (evidenceItems.length > requirement.maxCourseEvidence) {
+        throw new OutputValidationError(
+          `Requirement "${requirement.requirementTitle}" contains more than ${requirement.maxCourseEvidence} relevant courses.`,
+        );
+      }
+
+      const courseEvidence = evidenceItems.map((evidence, evidenceIndex) => ({
         courseReference: normalizeText(
           evidence.course_ref,
           `${path}.courseEvidence[${evidenceIndex}].courseReference`,
@@ -266,6 +276,7 @@ function extractRequirementDefinition(requirementPanel) {
     ),
     requirementTitle: requirementPanel.title,
     evidenceQuestionName: evidenceQuestion.name,
+    maxCourseEvidence: evidenceQuestion.maxPanelCount,
     topics: asArray(topicsQuestion?.choices).map(getChoiceValue),
   };
 }
@@ -347,6 +358,27 @@ function assertCoverageReferences(prerequisiteCoverage, courses) {
           );
         }
       }
+    }
+  }
+}
+
+function assertCourseUsageLimit(prerequisiteCoverage) {
+  const usageCounts = new Map();
+
+  for (const requirement of prerequisiteCoverage) {
+    for (const evidence of requirement.courseEvidence) {
+      const normalizedReference = evidence.courseReference.toLocaleLowerCase(
+        "en-US",
+      );
+      const usageCount = (usageCounts.get(normalizedReference) ?? 0) + 1;
+
+      if (usageCount > MAX_PREREQUISITE_USES_PER_COURSE) {
+        throw new OutputValidationError(
+          `Course "${evidence.courseReference}" is used for more than ${MAX_PREREQUISITE_USES_PER_COURSE} prerequisites.`,
+        );
+      }
+
+      usageCounts.set(normalizedReference, usageCount);
     }
   }
 }
