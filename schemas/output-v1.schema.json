@@ -198,7 +198,8 @@
           "maximum": 10000
         },
         "finalGrade": {
-          "type": ["string", "null"],
+          "type": "string",
+          "minLength": 1,
           "maxLength": 120
         },
         "officialDescription": {

@@ -168,7 +168,7 @@ function normalizeCourse(course, index, warnings) {
     ),
     courseCode,
     credits: Number(course.course_credits),
-    finalGrade: normalizeOptionalText(
+    finalGrade: normalizeText(
       course.final_grade,
       `${path}.finalGrade`,
       warnings,

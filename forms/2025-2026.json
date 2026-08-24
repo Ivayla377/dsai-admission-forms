@@ -32,10 +32,6 @@
             {
               "name": "id",
               "isRequired": true,
-              "maskType": "pattern",
-              "maskSettings": {
-                "pattern": "9999999"
-              },
               "title": "Student ID",
               "maxLength": 7,
               "inputSize": 7,
@@ -166,7 +162,7 @@
     {
       "name": "relevant_courses_page",
       "title": "Relevant courses",
-      "description": "Add every course you want to use as evidence for the admission requirements. Add each course only once. On the following pages, you will select which requirements each course supports.",
+      "description": "Add every passed course you want to use as evidence for the admission requirements. Add each course only once. On the following pages, you will select which requirements each course supports.",
       "elements": [
         {
           "type": "paneldynamic",
@@ -222,8 +218,8 @@
               "type": "text",
               "name": "final_grade",
               "title": "Final grade",
-              "description": "Leave this blank if a final grade is not yet available.",
               "placeholder": "For example, 8.5 or A",
+              "isRequired": true,
               "maxLength": 120,
               "width": "50%"
             },

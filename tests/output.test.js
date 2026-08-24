@@ -121,7 +121,7 @@ test("study references are generated from the degree order", () => {
   );
 });
 
-test("courses do not require a final grade", () => {
+test("output generation rejects courses without a final grade", () => {
   const missingGradeData = {
     ...fixture,
     relevant_courses: [
@@ -132,14 +132,16 @@ test("courses do not require a final grade", () => {
     ],
   };
 
-  const output = buildOutput({
-    surveyData: missingGradeData,
-    formDefinition,
-    formVersion: "2025-2026",
-    generatedAt,
-  });
-
-  assert.equal(output.courses[0].finalGrade, null);
+  assert.throws(
+    () =>
+      buildOutput({
+        surveyData: missingGradeData,
+        formDefinition,
+        formVersion: "2025-2026",
+        generatedAt,
+      }),
+    /\/courses\/0\/finalGrade.*fewer than 1 character/i,
+  );
 });
 
 test("removed URL and completion fields cannot invalidate Output JSON", () => {

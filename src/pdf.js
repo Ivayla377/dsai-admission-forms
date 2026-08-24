@@ -436,10 +436,9 @@ function buildCoveredByCell(courseEvidence, topic, coursesByReference) {
 }
 
 function formatCoveredByCourse({ course, courseNumber }) {
-  const grade = course.finalGrade || "not provided";
   return {
     label: `Course ${courseNumber}`,
-    details: ` · ${course.credits} ECTS · grade ${grade}`,
+    details: ` · ${course.credits} ECTS · grade ${course.finalGrade}`,
   };
 }
 

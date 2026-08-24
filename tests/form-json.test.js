@@ -146,6 +146,7 @@ test("relevant courses is a Dynamic Panel with copied degree choices", () => {
   const relevantCourses = survey.getQuestionByName("relevant_courses");
 
   assert.equal(relevantCourses.getType(), "paneldynamic");
+  assert.match(relevantCourses.page.description, /every passed course/i);
   assert.equal(relevantCourses.minPanelCount, 1);
   assert.equal(relevantCourses.maxPanelCount, 30);
   assert.equal(relevantCourses.panelsState, "firstExpanded");
@@ -189,8 +190,9 @@ test("relevant courses is a Dynamic Panel with copied degree choices", () => {
   const courseCredits = applicantQuestions.find(
     (question) => question.name === "course_credits",
   );
-  assert.equal(finalGrade.isRequired, false);
+  assert.equal(finalGrade.isRequired, true);
   assert.equal(finalGrade.requiredIf, undefined);
+  assert.equal(finalGrade.description, "");
   assert.equal(finalGrade.width, "50%");
   assert.equal(courseCredits.width, "45%");
   assert.equal(courseCredits.startWithNewLine, false);
@@ -378,8 +380,38 @@ test("personal information matches the shared TU/e form structure", () => {
   assert.equal(name.title, "Name");
   assert.equal(name.placeholder, "Surname, Given name(s)");
   assert.equal(studentId.title, "Student ID");
-  assert.equal(studentId.maskSettings.pattern, "9999999");
+  assert.equal(studentId.maskType, "none");
   assert.equal(studentId.maxLength, 7);
+  assert.equal(studentId.getMaxLength(), 7);
+  assert.equal(studentId.validators.length, 1);
+  assert.equal(studentId.validators[0].regex, "\\d{7}");
+});
+
+test("masked fields do not combine mask placeholders with native maxLength", () => {
+  const survey = createSurvey();
+  const previousStudies = survey.getQuestionByName("previous_studies");
+  const relevantCourses = survey.getQuestionByName("relevant_courses");
+  const maskedFields = [
+    previousStudies.templateElements.find(
+      (question) => question.name === "graduation_date",
+    ),
+    previousStudies.templateElements.find(
+      (question) => question.name === "total_degree_credits",
+    ),
+    relevantCourses.templateElements.find(
+      (question) => question.name === "course_credits",
+    ),
+  ];
+
+  assert.deepEqual(
+    maskedFields.map((field) => [field.name, field.maskType]),
+    [
+      ["graduation_date", "datetime"],
+      ["total_degree_credits", "numeric"],
+      ["course_credits", "numeric"],
+    ],
+  );
+  assert.ok(maskedFields.every((field) => field.getMaxLength() === null));
 });
 
 test("degree panels use entered values in collapsible headings", () => {
