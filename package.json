@@ -9,10 +9,11 @@
   },
   "scripts": {
     "dev": "vite --host 127.0.0.1",
-    "build": "node scripts/build-form.mjs 2025-2026",
+    "build": "npm run build:all",
     "build:form": "node scripts/build-form.mjs",
     "build:2025-2026": "npm run build:form -- 2025-2026",
-    "build:all": "npm run build:2025-2026",
+    "build:2026-2027": "npm run build:form -- 2026-2027",
+    "build:all": "npm run build:2025-2026 && npm run build:2026-2027",
     "test": "node --test --test-isolation=none",
     "check": "npm test && npm run build"
   },

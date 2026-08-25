@@ -94,7 +94,12 @@ test("the PDF definition includes courses and normalized prerequisite coverage",
   );
   assert.doesNotMatch(renderedText, /Study reference/);
   assert.doesNotMatch(renderedText, /Course reference/);
-  assert.doesNotMatch(renderedText, /Credit system/);
+  assert.match(renderedText, /Credit system/);
+  assert.match(renderedText, /Full-time equivalent duration/);
+  assert.match(renderedText, /3 years/);
+  assert.match(renderedText, /Numeric - higher grades are better/);
+  assert.match(renderedText, /Best possible grade/);
+  assert.match(renderedText, /Minimum passing grade/);
   assert.doesNotMatch(renderedText, /\(degree-1\)/);
   assert.match(renderedText, /5 \/ 180 ECTS/);
   assert.match(renderedText, /Matrices, vector spaces, linear systems/);
@@ -160,10 +165,20 @@ test("the PDF definition includes courses and normalized prerequisite coverage",
       "Graduation date",
       "University",
       "Location",
+      "Full-time equivalent duration",
+      "Credit system",
       "Total degree credits",
+      "Grading system",
+      "Best possible grade",
+      "Minimum passing grade",
     ],
   );
   assert.equal(studyDetailsTable.table.body[1][1].text, "07/07/2026");
+  assert.equal(studyDetailsTable.table.body[5][1].text, "ECTS");
+  assert.equal(
+    studyDetailsTable.table.body[7][1].text,
+    "Numeric - higher grades are better",
+  );
   assert.deepEqual(
     courseDetailsTable.table.body.map(([label]) => label.text),
     [
@@ -174,6 +189,46 @@ test("the PDF definition includes courses and normalized prerequisite coverage",
     ],
   );
   assert.equal(courseDetailsTable.table.body[1][1].text, "5 / 180 ECTS");
+});
+
+test("the PDF uses the selected degree credit system throughout", () => {
+  const requirement = getFirstRequirementWithTopics(formDefinition);
+  const topic = getChoiceValue(requirement.topics[0]);
+  const outputWithSemesterCredits = buildOutput({
+    surveyData: {
+      ...fixture,
+      previous_studies: [
+        {
+          ...fixture.previous_studies[0],
+          credit_system: "us_semester_credits",
+          total_degree_credits: 120,
+          grading_system: "letter_grades",
+          grading_system_information:
+            "Grades run from A to F, in descending order.",
+          best_grade: "A",
+          minimum_passing_grade: "D",
+        },
+      ],
+      [requirement.evidenceQuestionName]: [
+        {
+          course_ref: fixture.relevant_courses[0].course_ref,
+          topics_covered: [topic],
+        },
+      ],
+    },
+    formDefinition,
+    formVersion: "2025-2026",
+    generatedAt: "2026-08-18T10:00:00.000Z",
+  });
+  const renderedText = collectText(
+    buildPdfDefinition(outputWithSemesterCredits).content,
+  ).join("\n");
+
+  assert.match(renderedText, /5 \/ 120 US semester credits/);
+  assert.match(renderedText, /· 5 US semester credits · grade 8\.5/);
+  assert.match(renderedText, /Grading system information/);
+  assert.match(renderedText, /Grades run from A to F, in descending order/);
+  assert.doesNotMatch(renderedText, /5 ECTS/);
 });
 
 test("pdfmake can generate an augmented PDF blob", async () => {
@@ -199,7 +254,8 @@ function getFirstRequirementWithTopics(definition) {
         (element) => element.type === "paneldynamic",
       );
       const topics = evidence.templateElements.find(
-        (element) => element.name === "topics_covered",
+        (element) =>
+          (element.valueName || element.name) === "topics_covered",
       )?.choices;
 
       if (topics?.length) {

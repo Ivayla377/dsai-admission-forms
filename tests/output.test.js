@@ -26,9 +26,20 @@ test("SurveyJS data is normalized into the versioned Output JSON", () => {
     tueStudentNumber: "1234567",
   });
   assert.equal(output.previousStudies[0].studyReference, "degree-1");
+  assert.equal(
+    output.previousStudies[0].fullTimeEquivalentDurationYears,
+    3,
+  );
   assert.equal(output.previousStudies[0].totalDegreeCredits, 180);
   assert.equal(output.previousStudies[0].creditSystem, "ects");
   assert.equal(output.previousStudies[0].creditSystemOther, null);
+  assert.equal(
+    output.previousStudies[0].gradingSystem,
+    "numeric_higher_better",
+  );
+  assert.equal(output.previousStudies[0].gradingSystemInformation, null);
+  assert.equal(output.previousStudies[0].bestGrade, "10");
+  assert.equal(output.previousStudies[0].minimumPassingGrade, "5.5");
   assert.equal(output.courses[0].courseReference, "degree-1::MATH101");
   assert.equal(output.courses[0].degreeReference, "degree-1");
   assert.equal(output.courses[0].finalGrade, "8.5");
@@ -56,6 +67,144 @@ test("SurveyJS data is normalized into the versioned Output JSON", () => {
   );
   assert.deepEqual(output.generationWarnings, []);
   assert.doesNotThrow(() => JSON.parse(serializeOutputJson(output)));
+});
+
+test("other credit systems and letter grading details are normalized", () => {
+  const output = buildOutput({
+    surveyData: {
+      ...fixture,
+      previous_studies: [
+        {
+          ...fixture.previous_studies[0],
+          credit_system: "other",
+          credit_system_other: "Local credit points",
+          grading_system: "letter_grades",
+          grading_system_information:
+            "Grades run from A+ to F; A+ is best and D is the minimum pass.",
+          best_grade: "A+",
+          minimum_passing_grade: "D",
+        },
+      ],
+    },
+    formDefinition,
+    formVersion: "2025-2026",
+    generatedAt,
+  });
+
+  assert.deepEqual(
+    {
+      creditSystem: output.previousStudies[0].creditSystem,
+      creditSystemOther: output.previousStudies[0].creditSystemOther,
+      gradingSystem: output.previousStudies[0].gradingSystem,
+      gradingSystemInformation:
+        output.previousStudies[0].gradingSystemInformation,
+      bestGrade: output.previousStudies[0].bestGrade,
+      minimumPassingGrade: output.previousStudies[0].minimumPassingGrade,
+    },
+    {
+      creditSystem: "other",
+      creditSystemOther: "Local credit points",
+      gradingSystem: "letter_grades",
+      gradingSystemInformation:
+        "Grades run from A+ to F; A+ is best and D is the minimum pass.",
+      bestGrade: "A+",
+      minimumPassingGrade: "D",
+    },
+  );
+});
+
+test("pass/fail grading omits inapplicable scale endpoints", () => {
+  const output = buildOutput({
+    surveyData: {
+      ...fixture,
+      previous_studies: [
+        {
+          ...fixture.previous_studies[0],
+          grading_system: "pass_fail",
+          grading_system_information: "Stale hidden value",
+          best_grade: "Stale hidden value",
+          minimum_passing_grade: "Stale hidden value",
+        },
+      ],
+    },
+    formDefinition,
+    formVersion: "2025-2026",
+    generatedAt,
+  });
+
+  assert.equal(output.previousStudies[0].gradingSystem, "pass_fail");
+  assert.equal(output.previousStudies[0].gradingSystemInformation, null);
+  assert.equal(output.previousStudies[0].bestGrade, null);
+  assert.equal(output.previousStudies[0].minimumPassingGrade, null);
+});
+
+test("ordered grading systems require both scale endpoints", () => {
+  const dataWithoutBestGrade = {
+    ...fixture,
+    previous_studies: [
+      {
+        ...fixture.previous_studies[0],
+        best_grade: "",
+      },
+    ],
+  };
+
+  assert.throws(
+    () =>
+      buildOutput({
+        surveyData: dataWithoutBestGrade,
+        formDefinition,
+        formVersion: "2025-2026",
+        generatedAt,
+      }),
+    /previousStudies\/0\/bestGrade.*fewer than 1 character/i,
+  );
+});
+
+test("conditional credit and grading descriptions are required in output", () => {
+  const missingOtherCreditSystem = {
+    ...fixture,
+    previous_studies: [
+      {
+        ...fixture.previous_studies[0],
+        credit_system: "other",
+        credit_system_other: "",
+      },
+    ],
+  };
+  const missingLetterGradingInformation = {
+    ...fixture,
+    previous_studies: [
+      {
+        ...fixture.previous_studies[0],
+        grading_system: "letter_grades",
+        grading_system_information: "",
+        best_grade: "A",
+        minimum_passing_grade: "D",
+      },
+    ],
+  };
+
+  assert.throws(
+    () =>
+      buildOutput({
+        surveyData: missingOtherCreditSystem,
+        formDefinition,
+        formVersion: "2025-2026",
+        generatedAt,
+      }),
+    /previousStudies\/0\/creditSystemOther.*fewer than 1 character/i,
+  );
+  assert.throws(
+    () =>
+      buildOutput({
+        surveyData: missingLetterGradingInformation,
+        formDefinition,
+        formVersion: "2025-2026",
+        generatedAt,
+      }),
+    /previousStudies\/0\/gradingSystemInformation.*fewer than 1 character/i,
+  );
 });
 
 test("course evidence is normalized from the requirement panels in Form JSON", () => {
@@ -328,7 +477,8 @@ function getRequirements(definition) {
           (element) => element.type === "paneldynamic",
         );
         const topicsQuestion = evidenceQuestion.templateElements.find(
-          (element) => element.name === "topics_covered",
+          (element) =>
+            (element.valueName || element.name) === "topics_covered",
         );
 
         return {

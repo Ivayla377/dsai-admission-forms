@@ -4,6 +4,7 @@ import test from "node:test";
 import { Model } from "survey-core";
 
 import formDefinition from "../forms/2025-2026.json" with { type: "json" };
+import { addPrerequisiteKnowledgeContent } from "../src/prerequisite-content.js";
 import { addPrerequisiteCourseUsageValidation } from "../src/prerequisite-validation.js";
 import fixture from "./fixtures/synthetic-application.json" with { type: "json" };
 
@@ -53,10 +54,69 @@ test("the form presents the approved title and introduction", () => {
   );
   assert.equal(Object.hasOwn(formDefinition, "previewMode"), false);
   assert.equal(Object.hasOwn(formDefinition, "completedHtml"), false);
-  assert.equal(
-    formDefinition.pages[0].description,
-    "This form will help you create an additional documentation for your DSAI application documentation. You need to fill in the form, use it to generate a PDF, and upload this PDF in Osiris.",
+  const firstPage = formDefinition.pages[0];
+  assert.equal(firstPage.title, "About this form");
+  assert.equal(Object.hasOwn(firstPage, "description"), false);
+
+  const instructions = firstPage.elements[0];
+  assert.equal(instructions.type, "html");
+  assert.equal(instructions.name, "form_instructions");
+  assert.equal(instructions.showNumber, false);
+  assert.match(
+    instructions.html,
+    /This additional form helps the admissions committee determine how your previous studies meet the specific admission requirements for MSc Data Science and Artificial Intelligence\./,
   );
+  assert.match(instructions.html, /Complete all sections in English/i);
+  assert.match(instructions.html, /official academic documents/i);
+  assert.match(instructions.html, /official English translation/i);
+  assert.match(instructions.html, /upload this PDF to OSIRIS/i);
+  assert.deepEqual(
+    [
+      "Applicant details",
+      "Previous studies",
+      "Admission requirements",
+      "Relevant courses",
+      "Prerequisite coverage",
+    ].map((section) => instructions.html.includes(`<strong>${section}</strong>`)),
+    [true, true, true, true, true],
+  );
+});
+
+test("admission requirements are collapsible above the relevant courses", () => {
+  const survey = createSurvey();
+  addPrerequisiteKnowledgeContent(survey);
+
+  const relevantCoursesPage = survey.getPageByName("relevant_courses_page");
+  const reference = relevantCoursesPage.elements.find(
+    (element) => element.name === "admission_requirements_reference",
+  );
+  const overview = survey.getQuestionByName("admission_requirements_overview");
+  const requirements = getRequirementPanels(survey);
+
+  assert.equal(reference.getType(), "panel");
+  assert.equal(reference.title, "Admission requirements");
+  assert.equal(reference.showNumber, false);
+  assert.equal(reference.state, "expanded");
+  assert.match(reference.description, /before adding your relevant courses/i);
+  assert.equal(relevantCoursesPage.elements[0], reference);
+  assert.equal(relevantCoursesPage.elements[1].name, "relevant_courses");
+  assert.equal(overview.getType(), "html");
+  assert.equal(overview.parent, reference);
+  assert.doesNotMatch(overview.html, /Use this overview/i);
+
+  for (const requirement of requirements) {
+    assert.match(overview.html, new RegExp(escapeRegex(requirement.title)));
+
+    const evidence = requirement.elements.find(
+      (element) => element.getType() === "paneldynamic",
+    );
+    const topics = evidence.templateElements.find(
+      (element) => element.getValueName() === "topics_covered",
+    );
+    for (const topic of topics.choices) {
+      assert.ok(overview.html.includes(topic.text || String(topic.value)));
+    }
+  }
 });
 
 test("previous studies is a required Dynamic Panel limited to two degrees", () => {
@@ -78,36 +138,90 @@ test("previous studies is a required Dynamic Panel limited to two degrees", () =
     "country",
     "city",
     "graduation_date",
+    "full_time_equivalent_duration_years",
+    "credit_system",
     "total_degree_credits",
+    "credit_system_other",
+    "grading_system",
+    "grading_system_information",
+    "best_grade",
+    "minimum_passing_grade",
   ]);
   const applicantQuestions = previousStudies.templateElements.filter(
     (question) => question.getType() !== "expression",
   );
-  assert.equal(applicantQuestions[0].width, "100%");
-  assert.equal(applicantQuestions[1].width, "100%");
-  assert.deepEqual(
-    applicantQuestions.slice(2).map((question) => question.width),
-    ["50%", "50%", "50%", "50%"],
+  const questionsByName = new Map(
+    applicantQuestions.map((question) => [question.name, question]),
   );
-  assert.equal(applicantQuestions[3].startWithNewLine, false);
-  assert.equal(applicantQuestions[5].startWithNewLine, false);
-  assert.equal(applicantQuestions[4].inputType, "text");
-  assert.equal(applicantQuestions[4].maskType, "datetime");
-  assert.equal(applicantQuestions[4].maskSettings.pattern, "dd/mm/yyyy");
+  const graduationDate = questionsByName.get("graduation_date");
+  const duration = questionsByName.get(
+    "full_time_equivalent_duration_years",
+  );
+  const creditSystem = questionsByName.get("credit_system");
+  const totalCredits = questionsByName.get("total_degree_credits");
+  const gradingSystem = questionsByName.get("grading_system");
+  const bestGrade = questionsByName.get("best_grade");
+  const minimumPassingGrade = questionsByName.get("minimum_passing_grade");
+
+  assert.equal(questionsByName.get("degree_programme_name").width, "100%");
+  assert.equal(questionsByName.get("university_name").width, "100%");
+  assert.equal(questionsByName.get("city").startWithNewLine, false);
+  assert.equal(duration.startWithNewLine, false);
+  assert.equal(totalCredits.startWithNewLine, false);
+  assert.equal(minimumPassingGrade.startWithNewLine, false);
+  assert.equal(graduationDate.inputType, "text");
+  assert.equal(graduationDate.maskType, "datetime");
+  assert.equal(graduationDate.maskSettings.pattern, "dd/mm/yyyy");
   assert.equal(
-    applicantQuestions[4].maskSettings.getMaskedValue("2026-07-07"),
+    graduationDate.maskSettings.getMaskedValue("2026-07-07"),
     "07/07/2026",
   );
   assert.equal(
-    applicantQuestions[4].maskSettings.getUnmaskedValue("07/07/2026"),
+    graduationDate.maskSettings.getUnmaskedValue("07/07/2026"),
     "2026-07-07",
   );
-  assert.equal(applicantQuestions[5].inputType, "text");
-  assert.equal(applicantQuestions[5].maskType, "numeric");
-  assert.equal(applicantQuestions[5].inputTextAlignment, "left");
-  assert.equal(applicantQuestions[5].maskSettings.min, 1);
-  assert.equal(applicantQuestions[5].maskSettings.max, 10000);
-  assert.equal(applicantQuestions[5].maskSettings.precision, 1);
+  assert.equal(duration.maskType, "numeric");
+  assert.equal(duration.inputTextAlignment, "left");
+  assert.equal(duration.maskSettings.min, 0.1);
+  assert.equal(duration.maskSettings.max, 20);
+  assert.equal(duration.maskSettings.precision, 1);
+  assert.equal(
+    duration.description,
+    "Enter the normal full-time duration in years.",
+  );
+  assert.equal(totalCredits.maskType, "numeric");
+  assert.equal(totalCredits.inputTextAlignment, "left");
+  assert.equal(totalCredits.maskSettings.min, 1);
+  assert.equal(totalCredits.maskSettings.max, 10000);
+  assert.equal(totalCredits.maskSettings.precision, 1);
+  assert.equal(
+    totalCredits.description,
+    "Enter the total degree credits in the selected system.",
+  );
+  assert.deepEqual(
+    creditSystem.choices.map((choice) => choice.value),
+    [
+      "ects",
+      "us_semester_credits",
+      "us_quarter_credits",
+      "uk_cats",
+      "other",
+    ],
+  );
+  assert.deepEqual(
+    gradingSystem.choices.map((choice) => choice.value),
+    [
+      "numeric_higher_better",
+      "numeric_lower_better",
+      "letter_grades",
+      "pass_fail",
+      "other",
+    ],
+  );
+  assert.match(bestGrade.description, /best possible grade/i);
+  assert.match(minimumPassingGrade.description, /required to pass/i);
+  assert.equal(bestGrade.width, "50%");
+  assert.equal(minimumPassingGrade.width, "50%");
 
   const degreePanel = previousStudies.panels[0];
   assert.deepEqual(
@@ -122,7 +236,9 @@ test("previous studies is a required Dynamic Panel limited to two degrees", () =
       ["degree_programme_name"],
       ["university_name"],
       ["country", "city"],
-      ["graduation_date", "total_degree_credits"],
+      ["graduation_date", "full_time_equivalent_duration_years"],
+      ["credit_system", "total_degree_credits"],
+      ["grading_system"],
     ],
   );
   assert.equal(
@@ -139,6 +255,65 @@ test("previous studies is a required Dynamic Panel limited to two degrees", () =
   assert.equal(degreeReference.visible, false);
   assert.equal(degreeReference.clearIfInvisible, "none");
   assert.equal(degreeReference.expression, "'degree-' + ({panelIndex} + 1)");
+});
+
+test("degree credit and grading details use declarative conditional fields", () => {
+  const survey = createSurvey();
+  const degree = survey.getQuestionByName("previous_studies").panels[0];
+  const creditSystem = degree.getQuestionByName("credit_system");
+  const otherCreditSystem = degree.getQuestionByName("credit_system_other");
+  const gradingSystem = degree.getQuestionByName("grading_system");
+  const gradingInformation = degree.getQuestionByName(
+    "grading_system_information",
+  );
+  const bestGrade = degree.getQuestionByName("best_grade");
+  const minimumPassingGrade = degree.getQuestionByName(
+    "minimum_passing_grade",
+  );
+
+  assert.equal(otherCreditSystem.isVisible, false);
+  creditSystem.value = "other";
+  assert.equal(otherCreditSystem.isVisible, true);
+  assert.equal(otherCreditSystem.isRequired, true);
+
+  gradingSystem.value = "letter_grades";
+  assert.equal(gradingInformation.isVisible, true);
+  assert.equal(gradingInformation.isRequired, true);
+  assert.equal(bestGrade.isVisible, true);
+  assert.equal(bestGrade.isRequired, true);
+  assert.equal(minimumPassingGrade.isVisible, true);
+  assert.equal(minimumPassingGrade.isRequired, true);
+
+  otherCreditSystem.value = "Local credits";
+  gradingInformation.value = "A through F, in descending order.";
+  bestGrade.value = "A";
+  minimumPassingGrade.value = "D";
+  creditSystem.value = "ects";
+  gradingSystem.value = "pass_fail";
+
+  assert.equal(otherCreditSystem.isVisible, false);
+  assert.equal(gradingInformation.isVisible, false);
+  assert.equal(bestGrade.isVisible, false);
+  assert.equal(minimumPassingGrade.isVisible, false);
+  assert.equal(
+    Object.hasOwn(survey.data.previous_studies[0], "credit_system_other"),
+    false,
+  );
+  assert.equal(
+    Object.hasOwn(
+      survey.data.previous_studies[0],
+      "grading_system_information",
+    ),
+    false,
+  );
+  assert.equal(
+    Object.hasOwn(survey.data.previous_studies[0], "best_grade"),
+    false,
+  );
+  assert.equal(
+    Object.hasOwn(survey.data.previous_studies[0], "minimum_passing_grade"),
+    false,
+  );
 });
 
 test("relevant courses is a Dynamic Panel with copied degree choices", () => {
@@ -160,7 +335,7 @@ test("relevant courses is a Dynamic Panel with copied degree choices", () => {
   assert.deepEqual(
     applicantQuestions.map((question) => question.name),
     [
-      "degree_ref",
+      "relevant_course_degree_ref",
       "course_title",
       "course_code",
       "final_grade",
@@ -170,6 +345,7 @@ test("relevant courses is a Dynamic Panel with copied degree choices", () => {
   );
 
   const degree = applicantQuestions[0];
+  assert.equal(degree.getValueName(), "degree_ref");
   assert.equal(degree.choicesFromQuestion, "previous_studies");
   assert.equal(degree.choiceValuesFromQuestion, "degree_ref");
   assert.equal(degree.choiceTextsFromQuestion, "degree_label");
@@ -197,7 +373,7 @@ test("relevant courses is a Dynamic Panel with copied degree choices", () => {
   );
   assert.equal(finalGrade.isRequired, true);
   assert.equal(finalGrade.requiredIf, undefined);
-  assert.equal(finalGrade.description, "");
+  assert.match(finalGrade.description, /do not convert it/i);
   assert.equal(finalGrade.width, "50%");
   assert.equal(courseCredits.width, "45%");
   assert.equal(courseCredits.startWithNewLine, false);
@@ -207,6 +383,7 @@ test("relevant courses is a Dynamic Panel with copied degree choices", () => {
   assert.equal(courseCredits.maskSettings.min, 0.1);
   assert.equal(courseCredits.maskSettings.max, 10000);
   assert.equal(courseCredits.maskSettings.precision, 1);
+  assert.match(courseCredits.description, /credit system selected for the degree/i);
 
   assert.deepEqual(
     relevantCourses.panels[0].rows
@@ -217,7 +394,7 @@ test("relevant courses is a Dynamic Panel with copied degree choices", () => {
       )
       .filter((row) => row.length > 0),
     [
-      ["degree_ref"],
+      ["relevant_course_degree_ref"],
       ["course_title", "course_code"],
       ["final_grade", "course_credits"],
       ["official_course_description"],
@@ -277,23 +454,27 @@ test("requirement panels contain only declarative course evidence logic", () => 
     assert.equal(evidence.keyName, "course_ref");
 
     const course = evidence.templateElements.find(
-      (question) => question.name === "course_ref",
+      (question) => question.getValueName() === "course_ref",
     );
+    assert.match(course.name, /_course_ref$/);
     assert.equal(course.choicesFromQuestion, "relevant_courses");
     assert.equal(course.choiceValuesFromQuestion, "course_ref");
     assert.equal(course.choiceTextsFromQuestion, "course_label");
 
     const topics = evidence.templateElements.find(
-      (question) => question.name === "topics_covered",
+      (question) => question.getValueName() === "topics_covered",
     );
+    assert.match(topics.name, /_topics_covered$/);
     assert.ok(topics, `${requirement.name} should define prerequisite topics`);
     assert.equal(topics.visibleIf, "{panel.course_ref} notempty");
     assert.equal(topics.isRequired, true);
     assert.ok(topics.choices.length > 0);
 
     const explanation = evidence.templateElements.find(
-      (question) => question.name === "additional_explanation",
+      (question) =>
+        question.getValueName() === "additional_explanation",
     );
+    assert.match(explanation.name, /_additional_explanation$/);
     assert.equal(explanation.visibleIf, "{panel.course_ref} notempty");
     assert.equal(explanation.autoGrow, true);
   }
@@ -325,7 +506,7 @@ test("degree and course dropdowns copy calculated values from earlier pages", ()
     "Example University";
 
   const relevantCourse = survey.getQuestionByName("relevant_courses").panels[0];
-  const degree = relevantCourse.getQuestionByName("degree_ref");
+  const degree = relevantCourse.getQuestionByValueName("degree_ref");
   assert.deepEqual(
     degree.visibleChoices.map((choice) => ({
       value: choice.value,
@@ -351,13 +532,13 @@ test("degree and course dropdowns copy calculated values from earlier pages", ()
     )
     .find((question) =>
       question.templateElements.some(
-        (element) => element.name === "topics_covered",
+        (element) => element.getValueName() === "topics_covered",
       ),
     );
   evidence.addPanel();
   const evidencePanel = evidence.panels[0];
-  const course = evidencePanel.getQuestionByName("course_ref");
-  const topics = evidencePanel.getQuestionByName("topics_covered");
+  const course = evidencePanel.getQuestionByValueName("course_ref");
+  const topics = evidencePanel.getQuestionByValueName("topics_covered");
 
   assert.deepEqual(
     course.visibleChoices.map((choice) => ({
@@ -370,6 +551,40 @@ test("degree and course dropdowns copy calculated values from earlier pages", ()
 
   course.value = "degree-1::COURSE101";
   assert.equal(topics.isVisible, true);
+});
+
+test("unique Creator names preserve the existing answer-data field names", () => {
+  const survey = createSurvey();
+  const relevantCourse = survey.getQuestionByName("relevant_courses").panels[0];
+  relevantCourse.getQuestionByName("relevant_course_degree_ref").value =
+    "degree-1";
+  relevantCourse.getQuestionByName("course_code").value = "COURSE101";
+  relevantCourse.getQuestionByName("course_title").value = "Example Course";
+
+  const evidence = survey.getQuestionByName("evidence_linear_algebra");
+  evidence.addPanel();
+  const evidencePanel = evidence.panels[0];
+  evidencePanel.getQuestionByValueName("course_ref").value =
+    "degree-1::COURSE101";
+  evidencePanel.getQuestionByValueName("topics_covered").value = [
+    "Calculate with matrices and vectors",
+  ];
+  evidencePanel.getQuestionByValueName("additional_explanation").value =
+    "Equivalent terminology is used.";
+
+  assert.equal(survey.data.relevant_courses[0].degree_ref, "degree-1");
+  assert.equal(
+    Object.hasOwn(
+      survey.data.relevant_courses[0],
+      "relevant_course_degree_ref",
+    ),
+    false,
+  );
+  assert.deepEqual(survey.data.evidence_linear_algebra[0], {
+    course_ref: "degree-1::COURSE101",
+    topics_covered: ["Calculate with matrices and vectors"],
+    additional_explanation: "Equivalent terminology is used.",
+  });
 });
 
 test("a course can support at most three prerequisites", () => {
@@ -389,7 +604,7 @@ test("a course can support at most three prerequisites", () => {
         (element) => element.getType() === "paneldynamic",
       );
       evidence.addPanel();
-      return evidence.panels[0].getQuestionByName("course_ref");
+      return evidence.panels[0].getQuestionByValueName("course_ref");
     });
 
   for (const question of courseQuestions) {
@@ -446,6 +661,10 @@ test("masked fields do not combine mask placeholders with native maxLength", () 
       (question) => question.name === "graduation_date",
     ),
     previousStudies.templateElements.find(
+      (question) =>
+        question.name === "full_time_equivalent_duration_years",
+    ),
+    previousStudies.templateElements.find(
       (question) => question.name === "total_degree_credits",
     ),
     relevantCourses.templateElements.find(
@@ -457,6 +676,7 @@ test("masked fields do not combine mask placeholders with native maxLength", () 
     maskedFields.map((field) => [field.name, field.maskType]),
     [
       ["graduation_date", "datetime"],
+      ["full_time_equivalent_duration_years", "numeric"],
       ["total_degree_credits", "numeric"],
       ["course_credits", "numeric"],
     ],
@@ -508,6 +728,15 @@ test("the Form JSON contains no parallel custom requirements structure", () => {
   assert.equal(Object.hasOwn(formDefinition, "requirements"), false);
 });
 
+test("all SurveyJS element names are unique for Survey Creator", () => {
+  const names = collectElementNames(formDefinition.pages);
+  const duplicateNames = [...names.entries()]
+    .filter(([, paths]) => paths.length > 1)
+    .map(([name]) => name);
+
+  assert.deepEqual(duplicateNames, []);
+});
+
 function getRequirementPanels(survey) {
   return survey.pages.flatMap((page) =>
     page.elements.filter(
@@ -520,4 +749,28 @@ function getRequirementPanels(survey) {
 
 function createSurvey() {
   return new Model(structuredClone(formDefinition));
+}
+
+function collectElementNames(elements, parentPath = "") {
+  const names = new Map();
+
+  function visit(items, path) {
+    for (const element of items ?? []) {
+      const elementPath = `${path}/${element.name || element.type}`;
+      if (element.name) {
+        const paths = names.get(element.name) ?? [];
+        paths.push(elementPath);
+        names.set(element.name, paths);
+      }
+      visit(element.elements, elementPath);
+      visit(element.templateElements, `${elementPath}[]`);
+    }
+  }
+
+  visit(elements, parentPath);
+  return names;
+}
+
+function escapeRegex(value) {
+  return String(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }

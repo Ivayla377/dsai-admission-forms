@@ -4,6 +4,11 @@ export const formVersions = {
     definition: "forms/2025-2026.json",
     output: "dist/dsai-admission-2025-2026.html",
   },
+  "2026-2027": {
+    id: "2026-2027",
+    definition: "forms/2026-2027.json",
+    output: "dist/dsai-admission-2026-2027.html",
+  },
 };
 
 export function getFormVersion(id) {
@@ -17,4 +22,3 @@ export function getFormVersion(id) {
 
   return formVersion;
 }
-
