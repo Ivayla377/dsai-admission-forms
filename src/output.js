@@ -3,9 +3,9 @@ import addFormats from "ajv-formats";
 
 import outputSchema from "../schemas/output-v1.schema.json" with { type: "json" };
 import { MAX_PREREQUISITE_USES_PER_COURSE } from "./prerequisite-validation.js";
+import { getQuestionValueName } from "./surveyjs-question-utils.js";
 
 export const OUTPUT_SCHEMA_VERSION = "1";
-const ASSUMED_CREDIT_SYSTEM = "ects";
 
 const ajv = new Ajv2020({ allErrors: true });
 addFormats(ajv);
@@ -105,6 +105,20 @@ export function downloadOutputJson(output) {
 
 function normalizePreviousStudy(study, index, warnings) {
   const path = `previousStudies[${index}]`;
+  const creditSystem = normalizeText(
+    study.credit_system,
+    `${path}.creditSystem`,
+    warnings,
+  );
+  const gradingSystem = normalizeText(
+    study.grading_system,
+    `${path}.gradingSystem`,
+    warnings,
+  );
+  const requiresGradingSystemInformation = ["letter_grades", "other"].includes(
+    gradingSystem,
+  );
+  const usesOrderedGrades = gradingSystem !== "pass_fail";
 
   return {
     studyReference: normalizeText(
@@ -129,9 +143,37 @@ function normalizePreviousStudy(study, index, warnings) {
     ),
     city: normalizeText(study.city, `${path}.city`, warnings),
     country: normalizeText(study.country, `${path}.country`, warnings),
+    fullTimeEquivalentDurationYears: Number(
+      study.full_time_equivalent_duration_years,
+    ),
     totalDegreeCredits: Number(study.total_degree_credits),
-    creditSystem: ASSUMED_CREDIT_SYSTEM,
-    creditSystemOther: null,
+    creditSystem,
+    creditSystemOther:
+      creditSystem === "other"
+        ? normalizeText(
+            study.credit_system_other,
+            `${path}.creditSystemOther`,
+            warnings,
+          )
+        : null,
+    gradingSystem,
+    gradingSystemInformation: requiresGradingSystemInformation
+      ? normalizeText(
+          study.grading_system_information,
+          `${path}.gradingSystemInformation`,
+          warnings,
+        )
+      : null,
+    bestGrade: usesOrderedGrades
+      ? normalizeText(study.best_grade, `${path}.bestGrade`, warnings)
+      : null,
+    minimumPassingGrade: usesOrderedGrades
+      ? normalizeText(
+          study.minimum_passing_grade,
+          `${path}.minimumPassingGrade`,
+          warnings,
+        )
+      : null,
   };
 }
 
@@ -266,7 +308,7 @@ function extractRequirementDefinition(requirementPanel) {
   }
 
   const topicsQuestion = asArray(evidenceQuestion.templateElements).find(
-    (element) => element.name === "topics_covered",
+    (element) => getQuestionValueName(element) === "topics_covered",
   );
 
   return {

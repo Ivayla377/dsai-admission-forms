@@ -13,6 +13,14 @@ const CREDIT_SYSTEM_LABELS = Object.freeze({
   other: "Other credit system",
 });
 
+const GRADING_SYSTEM_LABELS = Object.freeze({
+  numeric_higher_better: "Numeric - higher grades are better",
+  numeric_lower_better: "Numeric - lower grades are better",
+  letter_grades: "Letter grades",
+  pass_fail: "Pass / Fail",
+  other: "Other",
+});
+
 export function buildPdfDefinition(output, { logoUrl = "" } = {}) {
   const outputJson = serializeOutputJson(output);
   const attachmentName = `dsai-admission-${output.formVersion}.json`;
@@ -219,18 +227,42 @@ function buildReportHeading(output, logoUrl) {
 }
 
 function buildPreviousStudySection(study, index) {
+  const details = [
+    ["Degree programme", study.degreeProgrammeName],
+    ["Graduation date", formatDate(study.graduationDate)],
+    ["University", study.universityName],
+    ["Location", `${study.city}, ${study.country}`],
+    [
+      "Full-time equivalent duration",
+      formatStudyDuration(study.fullTimeEquivalentDurationYears),
+    ],
+    ["Credit system", getCreditSystemLabel(study)],
+    ["Total degree credits", String(study.totalDegreeCredits)],
+    [
+      "Grading system",
+      GRADING_SYSTEM_LABELS[study.gradingSystem] ?? study.gradingSystem,
+    ],
+  ];
+
+  if (study.bestGrade) {
+    details.push(["Best possible grade", study.bestGrade]);
+  }
+  if (study.minimumPassingGrade) {
+    details.push(["Minimum passing grade", study.minimumPassingGrade]);
+  }
+  if (study.gradingSystemInformation) {
+    details.push([
+      "Grading system information",
+      study.gradingSystemInformation,
+    ]);
+  }
+
   return [
     {
       text: `Degree ${index + 1}: ${study.degreeProgrammeName}`,
       style: "degreeHeading",
     },
-    detailsTable([
-      ["Degree programme", study.degreeProgrammeName],
-      ["Graduation date", formatDate(study.graduationDate)],
-      ["University", study.universityName],
-      ["Location", `${study.city}, ${study.country}`],
-      ["Total degree credits", String(study.totalDegreeCredits)],
-    ]),
+    detailsTable(details),
   ];
 }
 
@@ -273,11 +305,22 @@ function getCreditSystemLabel(study) {
   return CREDIT_SYSTEM_LABELS[study.creditSystem] ?? study.creditSystem;
 }
 
+function formatStudyDuration(years) {
+  return `${years} ${years === 1 ? "year" : "years"}`;
+}
+
 function buildPrerequisiteCoverage(output) {
+  const studiesByReference = new Map(
+    output.previousStudies.map((study) => [study.studyReference, study]),
+  );
   const coursesByReference = new Map(
     output.courses.map((course, index) => [
       course.courseReference,
-      { course, courseNumber: index + 1 },
+      {
+        course,
+        courseNumber: index + 1,
+        study: studiesByReference.get(course.degreeReference),
+      },
     ]),
   );
 
@@ -435,10 +478,12 @@ function buildCoveredByCell(courseEvidence, topic, coursesByReference) {
   };
 }
 
-function formatCoveredByCourse({ course, courseNumber }) {
+function formatCoveredByCourse({ course, courseNumber, study }) {
+  const creditSystem = study ? ` ${getCreditSystemLabel(study)}` : "";
+
   return {
     label: `Course ${courseNumber}`,
-    details: ` · ${course.credits} ECTS · grade ${course.finalGrade}`,
+    details: ` · ${course.credits}${creditSystem} · grade ${course.finalGrade}`,
   };
 }
 

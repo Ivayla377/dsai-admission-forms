@@ -10,7 +10,12 @@
       "university_name": "Example University",
       "city": "Eindhoven",
       "country": "Netherlands",
-      "total_degree_credits": 180
+      "full_time_equivalent_duration_years": 3,
+      "credit_system": "ects",
+      "total_degree_credits": 180,
+      "grading_system": "numeric_higher_better",
+      "best_grade": "10",
+      "minimum_passing_grade": "5.5"
     }
   ],
   "relevant_courses": [

@@ -86,9 +86,14 @@
         "universityName",
         "city",
         "country",
+        "fullTimeEquivalentDurationYears",
         "totalDegreeCredits",
         "creditSystem",
-        "creditSystemOther"
+        "creditSystemOther",
+        "gradingSystem",
+        "gradingSystemInformation",
+        "bestGrade",
+        "minimumPassingGrade"
       ],
       "properties": {
         "studyReference": {
@@ -119,6 +124,11 @@
           "minLength": 1,
           "maxLength": 120
         },
+        "fullTimeEquivalentDurationYears": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 20
+        },
         "totalDegreeCredits": {
           "type": "number",
           "exclusiveMinimum": 0,
@@ -137,6 +147,28 @@
         "creditSystemOther": {
           "type": ["string", "null"],
           "maxLength": 120
+        },
+        "gradingSystem": {
+          "type": "string",
+          "enum": [
+            "numeric_higher_better",
+            "numeric_lower_better",
+            "letter_grades",
+            "pass_fail",
+            "other"
+          ]
+        },
+        "gradingSystemInformation": {
+          "type": ["string", "null"],
+          "maxLength": 4000
+        },
+        "bestGrade": {
+          "type": ["string", "null"],
+          "maxLength": 120
+        },
+        "minimumPassingGrade": {
+          "type": ["string", "null"],
+          "maxLength": 120
         }
       },
       "allOf": [
@@ -152,6 +184,70 @@
           "then": {
             "properties": {
               "creditSystemOther": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "creditSystemOther": {
+                "type": "null"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "gradingSystem": {
+                "enum": ["letter_grades", "other"]
+              }
+            },
+            "required": ["gradingSystem"]
+          },
+          "then": {
+            "properties": {
+              "gradingSystemInformation": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "gradingSystemInformation": {
+                "type": "null"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "gradingSystem": {
+                "const": "pass_fail"
+              }
+            },
+            "required": ["gradingSystem"]
+          },
+          "then": {
+            "properties": {
+              "bestGrade": {
+                "type": "null"
+              },
+              "minimumPassingGrade": {
+                "type": "null"
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "bestGrade": {
+                "type": "string",
+                "minLength": 1
+              },
+              "minimumPassingGrade": {
                 "type": "string",
                 "minLength": 1
               }

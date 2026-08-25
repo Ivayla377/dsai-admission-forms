@@ -158,6 +158,64 @@ select {
   white-space: pre-line;
 }
 
+// Keep the introduction in the same SurveyJS card language as the questions,
+// with a persistent accent that does not depend on focus or validation state.
+#surveyElement [data-name="form_instructions"] {
+  padding: 24px 32px;
+  border-inline-start: 4px solid var(--action-green);
+  border-radius: 4px;
+  background: var(--paper);
+  box-shadow: var(--panel-shadow);
+}
+
+#surveyElement .form-instructions > :first-child,
+#surveyElement .requirements-overview > :first-child {
+  margin-top: 0;
+}
+
+#surveyElement .form-instructions > :last-child,
+#surveyElement .requirements-overview > :last-child {
+  margin-bottom: 0;
+}
+
+#surveyElement .form-instructions ol {
+  margin: 8px 0 16px;
+  padding-inline-start: 24px;
+}
+
+#surveyElement .form-instructions li + li {
+  margin-top: 4px;
+}
+
+#surveyElement .requirements-overview__list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px 28px;
+  margin-top: 22px;
+}
+
+#surveyElement .requirements-overview__item {
+  min-width: 0;
+  padding-inline-start: 14px;
+  border-inline-start: 3px solid var(--action-green);
+}
+
+#surveyElement .requirements-overview__item h3 {
+  margin: 0 0 7px;
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+#surveyElement .requirements-overview__item ul {
+  margin: 0;
+  padding-inline-start: 20px;
+}
+
+#surveyElement .requirements-overview__item li + li {
+  margin-top: 4px;
+}
+
 #surveyElement .sd-panel__title .sd-element__num {
   color: inherit;
   font-size: var(--sjs-font-questiontitle-size, var(--sjs-font-size, 16px));
@@ -435,6 +493,14 @@ select {
 
   #surveyElement .sd-progress-buttons {
     padding: 8px 14px 0;
+  }
+
+  #surveyElement .requirements-overview__list {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  #surveyElement [data-name="form_instructions"] {
+    padding: 20px;
   }
 
   .report-page__content {

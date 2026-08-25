@@ -18,6 +18,7 @@ import {
   downloadPdfBlob,
   getPdfFilename,
 } from "./pdf.js";
+import { addPrerequisiteKnowledgeContent } from "./prerequisite-content.js";
 import { addPrerequisiteCourseUsageValidation } from "./prerequisite-validation.js";
 import "./styles.scss";
 
@@ -42,7 +43,7 @@ const survey = new Model(createRuntimeFormDefinition(formDefinition));
 survey.applyTheme(surveyTheme);
 survey.focusFirstQuestionAutomatic = false;
 survey.showCompleteButton = false;
-addRequirementKnowledgeDescriptions(survey);
+addPrerequisiteKnowledgeContent(survey);
 addPrerequisiteCourseUsageValidation(survey);
 
 const reportTemplate = requiredElement("reportPageTemplate");
@@ -220,32 +221,6 @@ function updateNextButtonText(model) {
   model.pageNextText = isBeforeReport
     ? formDefinition.completeText
     : (formDefinition.pageNextText ?? "Next");
-}
-
-function addRequirementKnowledgeDescriptions(model) {
-  const requirementPanels = model.pages.flatMap((page) =>
-    page.elements.filter(
-      (element) =>
-        element.getType() === "panel" &&
-        element.name.startsWith("requirement_"),
-    ),
-  );
-
-  for (const requirement of requirementPanels) {
-    const evidence = requirement.elements.find(
-      (element) => element.getType() === "paneldynamic",
-    );
-    const topics = evidence?.templateElements.find(
-      (element) => element.name === "topics_covered",
-    );
-    const topicLabels = (topics?.choices ?? []).map(
-      (choice) => choice.text || String(choice.value),
-    );
-
-    requirement.description = topicLabels
-      .map((topic) => `- ${topic}`)
-      .join("\n");
-  }
 }
 
 function setBranding() {

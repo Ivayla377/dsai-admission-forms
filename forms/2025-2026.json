@@ -12,9 +12,14 @@
   "pages": [
     {
       "name": "applicant_details",
-      "title": "Applicant details",
-      "description": "This form will help you create an additional documentation for your DSAI application documentation. You need to fill in the form, use it to generate a PDF, and upload this PDF in Osiris.",
+      "title": "About this form",
       "elements": [
+        {
+          "type": "html",
+          "name": "form_instructions",
+          "html": "<div class=\"form-instructions\"><p>This additional form helps the admissions committee determine how your previous studies meet the specific admission requirements for MSc Data Science and Artificial Intelligence.</p><p>Complete the form as follows:</p><ol><li><strong>Applicant details</strong> – enter your personal information as it appears in your application.</li><li><strong>Previous studies</strong> – provide information about the degree(s) relevant to your application.</li><li><strong>Admission requirements</strong> – review the prerequisite subjects and topics.</li><li><strong>Relevant courses</strong> – add the passed courses from those degrees that you want to use as evidence for the admission prerequisites.</li><li><strong>Prerequisite coverage</strong> – indicate which of your relevant courses provide evidence for each prerequisite subject.</li></ol><p>Complete all sections in English. Before you begin, have the official academic documents submitted with your application available. If an official English translation was submitted, use that version when completing this form.</p><p>After completing the form, generate and review the PDF report, then <strong>upload this PDF to OSIRIS.</strong></p></div>",
+          "showNumber": false
+        },
         {
           "type": "multipletext",
           "name": "personal_info",
@@ -140,9 +145,57 @@
             },
             {
               "type": "text",
+              "name": "full_time_equivalent_duration_years",
+              "title": "Full-time equivalent duration",
+              "description": "Enter the normal full-time duration in years.",
+              "maskType": "numeric",
+              "maskSettings": {
+                "min": 0.1,
+                "max": 20,
+                "precision": 1
+              },
+              "inputTextAlignment": "left",
+              "placeholder": "For example, 3",
+              "isRequired": true,
+              "width": "50%",
+              "startWithNewLine": false
+            },
+            {
+              "type": "dropdown",
+              "name": "credit_system",
+              "title": "Credit system",
+              "description": "Select the credit system used by this degree.",
+              "placeholder": "Select a credit system",
+              "isRequired": true,
+              "choices": [
+                {
+                  "value": "ects",
+                  "text": "ECTS"
+                },
+                {
+                  "value": "us_semester_credits",
+                  "text": "US semester credits"
+                },
+                {
+                  "value": "us_quarter_credits",
+                  "text": "US quarter credits"
+                },
+                {
+                  "value": "uk_cats",
+                  "text": "UK credits (CATS)"
+                },
+                {
+                  "value": "other",
+                  "text": "Other"
+                }
+              ],
+              "width": "50%"
+            },
+            {
+              "type": "text",
               "name": "total_degree_credits",
-              "title": "Total degree credits (ECTS)",
-              "description": "Enter the ECTS equivalent if another credit system is used.",
+              "title": "Total degree credits",
+              "description": "Enter the total degree credits in the selected system.",
               "maskType": "numeric",
               "maskSettings": {
                 "min": 1,
@@ -154,6 +207,84 @@
               "isRequired": true,
               "width": "50%",
               "startWithNewLine": false
+            },
+            {
+              "type": "text",
+              "name": "credit_system_other",
+              "title": "Other credit system",
+              "description": "Enter the name of the credit system.",
+              "visibleIf": "{panel.credit_system} = 'other'",
+              "requiredIf": "{panel.credit_system} = 'other'",
+              "clearIfInvisible": "onHidden",
+              "maxLength": 120,
+              "width": "50%"
+            },
+            {
+              "type": "dropdown",
+              "name": "grading_system",
+              "title": "Grading system",
+              "description": "Select how grades are expressed and ordered in the official academic document used to complete this form.",
+              "placeholder": "Select a grading system",
+              "isRequired": true,
+              "choices": [
+                {
+                  "value": "numeric_higher_better",
+                  "text": "Numeric - higher grades are better"
+                },
+                {
+                  "value": "numeric_lower_better",
+                  "text": "Numeric - lower grades are better"
+                },
+                {
+                  "value": "letter_grades",
+                  "text": "Letter grades"
+                },
+                {
+                  "value": "pass_fail",
+                  "text": "Pass / Fail"
+                },
+                {
+                  "value": "other",
+                  "text": "Other"
+                }
+              ],
+              "width": "100%"
+            },
+            {
+              "type": "comment",
+              "name": "grading_system_information",
+              "title": "Grading system information",
+              "description": "Describe the grading scale used by your degree, including the possible grades and their meaning or ordering.",
+              "visibleIf": "{panel.grading_system} = 'letter_grades' or {panel.grading_system} = 'other'",
+              "requiredIf": "{panel.grading_system} = 'letter_grades' or {panel.grading_system} = 'other'",
+              "clearIfInvisible": "onHidden",
+              "autoGrow": true,
+              "rows": 3,
+              "maxLength": 4000,
+              "width": "100%"
+            },
+            {
+              "type": "text",
+              "name": "best_grade",
+              "title": "Best possible grade",
+              "description": "Enter the best possible grade in this grading system, exactly as it is written (for example, 10, 1.0 or A+).",
+              "visibleIf": "{panel.grading_system} notempty and {panel.grading_system} != 'pass_fail'",
+              "requiredIf": "{panel.grading_system} notempty and {panel.grading_system} != 'pass_fail'",
+              "clearIfInvisible": "onHidden",
+              "maxLength": 120,
+              "width": "50%"
+            },
+            {
+              "type": "text",
+              "name": "minimum_passing_grade",
+              "title": "Minimum passing grade",
+              "description": "Enter the minimum grade required to pass, exactly as it is written (for example, 5.5, 4.0 or D).",
+              "visibleIf": "{panel.grading_system} notempty and {panel.grading_system} != 'pass_fail'",
+              "requiredIf": "{panel.grading_system} notempty and {panel.grading_system} != 'pass_fail'",
+              "clearIfInvisible": "onHidden",
+              "maxLength": 120,
+              "width": "50%",
+              "startWithNewLine": false
             }
           ]
         }
@@ -162,8 +293,24 @@
     {
       "name": "relevant_courses_page",
       "title": "Relevant courses",
-      "description": "Add every passed course you want to use as evidence for the admission requirements. Add each course only once. On the following pages, you will select which requirements each course supports.",
+      "description": "Add every passed course you want to use as evidence for the admission requirements. Add each course only once. On the following page, you will select which requirements each course supports.",
       "elements": [
+        {
+          "type": "panel",
+          "name": "admission_requirements_reference",
+          "title": "Admission requirements",
+          "description": "Review the prerequisite subjects and topics before adding your relevant courses.",
+          "showNumber": false,
+          "state": "expanded",
+          "elements": [
+            {
+              "type": "html",
+              "name": "admission_requirements_overview",
+              "html": "<p>The prerequisite overview is generated from the prerequisite coverage definitions in this form.</p>",
+              "showNumber": false
+            }
+          ]
+        },
         {
           "type": "paneldynamic",
           "name": "relevant_courses",
@@ -185,7 +332,8 @@
           "templateElements": [
             {
               "type": "dropdown",
-              "name": "degree_ref",
+              "name": "relevant_course_degree_ref",
+              "valueName": "degree_ref",
               "title": "Degree",
               "description": "Select the degree that contains this course.",
               "placeholder": "Select a degree",
@@ -220,6 +368,7 @@
               "type": "text",
               "name": "final_grade",
               "title": "Final grade",
+              "description": "Enter the final grade exactly as shown in the official academic document used to complete this form; do not convert it.",
               "placeholder": "For example, 8.5 or A",
               "isRequired": true,
               "maxLength": 120,
@@ -229,7 +378,7 @@
               "type": "text",
               "name": "course_credits",
               "title": "Course credits",
-              "description": "Use the same credit system as the selected degree.",
+              "description": "Enter the course credits in the credit system selected for the degree.",
               "maskType": "numeric",
               "maskSettings": {
                 "min": 0.1,
@@ -274,7 +423,7 @@
     {
       "name": "prerequisite_coverage_page",
       "title": "Prerequisite coverage",
-      "description": "For each prerequisite add applicable courses and select the topics they cover. If you have no relevant course for a prerequisite, continue to the next one.",
+      "description": "For each prerequisite add applicable courses and select the topics they cover. If you have no relevant course for a prerequisite, continue to the next one. Each prerequisite can be supported by up to 3 relevant courses. A single course may be used as evidence for at most 3 prerequisites.",
       "elements": [
         {
           "type": "panel",
@@ -301,7 +450,8 @@
               "templateElements": [
                 {
                   "type": "dropdown",
-                  "name": "course_ref",
+                  "name": "linear_algebra_course_ref",
+                  "valueName": "course_ref",
                   "title": "Course",
                   "placeholder": "Select a course",
                   "isRequired": true,
@@ -311,7 +461,8 @@
                 },
                 {
                   "type": "checkbox",
-                  "name": "topics_covered",
+                  "name": "linear_algebra_topics_covered",
+                  "valueName": "topics_covered",
                   "title": "Topics covered by this course",
                   "visibleIf": "{panel.course_ref} notempty",
                   "isRequired": true,
@@ -324,7 +475,8 @@
                 },
                 {
                   "type": "comment",
-                  "name": "additional_explanation",
+                  "name": "linear_algebra_additional_explanation",
+                  "valueName": "additional_explanation",
                   "title": "Additional explanation (optional)",
                   "description": "Use this only if the connection is not clear from the official description.",
                   "visibleIf": "{panel.course_ref} notempty",
@@ -361,7 +513,8 @@
               "templateElements": [
                 {
                   "type": "dropdown",
-                  "name": "course_ref",
+                  "name": "logic_course_ref",
+                  "valueName": "course_ref",
                   "title": "Course",
                   "placeholder": "Select a course",
                   "isRequired": true,
@@ -371,7 +524,8 @@
                 },
                 {
                   "type": "checkbox",
-                  "name": "topics_covered",
+                  "name": "logic_topics_covered",
+                  "valueName": "topics_covered",
                   "title": "Topics covered by this course",
                   "visibleIf": "{panel.course_ref} notempty",
                   "isRequired": true,
@@ -383,7 +537,8 @@
                 },
                 {
                   "type": "comment",
-                  "name": "additional_explanation",
+                  "name": "logic_additional_explanation",
+                  "valueName": "additional_explanation",
                   "title": "Additional explanation (optional)",
                   "description": "Use this only if the connection is not clear from the official description.",
                   "visibleIf": "{panel.course_ref} notempty",
@@ -420,7 +575,8 @@
               "templateElements": [
                 {
                   "type": "dropdown",
-                  "name": "course_ref",
+                  "name": "discrete_mathematics_course_ref",
+                  "valueName": "course_ref",
                   "title": "Course",
                   "placeholder": "Select a course",
                   "isRequired": true,
@@ -430,7 +586,8 @@
                 },
                 {
                   "type": "checkbox",
-                  "name": "topics_covered",
+                  "name": "discrete_mathematics_topics_covered",
+                  "valueName": "topics_covered",
                   "title": "Topics covered by this course",
                   "visibleIf": "{panel.course_ref} notempty",
                   "isRequired": true,
@@ -442,7 +599,8 @@
                 },
                 {
                   "type": "comment",
-                  "name": "additional_explanation",
+                  "name": "discrete_mathematics_additional_explanation",
+                  "valueName": "additional_explanation",
                   "title": "Additional explanation (optional)",
                   "description": "Use this only if the connection is not clear from the official description.",
                   "visibleIf": "{panel.course_ref} notempty",
@@ -479,7 +637,8 @@
               "templateElements": [
                 {
                   "type": "dropdown",
-                  "name": "course_ref",
+                  "name": "probability_statistics_course_ref",
+                  "valueName": "course_ref",
                   "title": "Course",
                   "placeholder": "Select a course",
                   "isRequired": true,
@@ -489,7 +648,8 @@
                 },
                 {
                   "type": "checkbox",
-                  "name": "topics_covered",
+                  "name": "probability_statistics_topics_covered",
+                  "valueName": "topics_covered",
                   "title": "Topics covered by this course",
                   "visibleIf": "{panel.course_ref} notempty",
                   "isRequired": true,
@@ -500,7 +660,8 @@
                 },
                 {
                   "type": "comment",
-                  "name": "additional_explanation",
+                  "name": "probability_statistics_additional_explanation",
+                  "valueName": "additional_explanation",
                   "title": "Additional explanation (optional)",
                   "description": "Use this only if the connection is not clear from the official description.",
                   "visibleIf": "{panel.course_ref} notempty",
@@ -537,7 +698,8 @@
               "templateElements": [
                 {
                   "type": "dropdown",
-                  "name": "course_ref",
+                  "name": "data_structures_algorithms_course_ref",
+                  "valueName": "course_ref",
                   "title": "Course",
                   "placeholder": "Select a course",
                   "isRequired": true,
@@ -547,7 +709,8 @@
                 },
                 {
                   "type": "checkbox",
-                  "name": "topics_covered",
+                  "name": "data_structures_algorithms_topics_covered",
+                  "valueName": "topics_covered",
                   "title": "Topics covered by this course",
                   "visibleIf": "{panel.course_ref} notempty",
                   "isRequired": true,
@@ -558,7 +721,8 @@
                 },
                 {
                   "type": "comment",
-                  "name": "additional_explanation",
+                  "name": "data_structures_algorithms_additional_explanation",
+                  "valueName": "additional_explanation",
                   "title": "Additional explanation (optional)",
                   "description": "Use this only if the connection is not clear from the official description.",
                   "visibleIf": "{panel.course_ref} notempty",
@@ -595,7 +759,8 @@
               "templateElements": [
                 {
                   "type": "dropdown",
-                  "name": "course_ref",
+                  "name": "object_oriented_programming_software_development_course_ref",
+                  "valueName": "course_ref",
                   "title": "Course",
                   "placeholder": "Select a course",
                   "isRequired": true,
@@ -605,7 +770,8 @@
                 },
                 {
                   "type": "checkbox",
-                  "name": "topics_covered",
+                  "name": "object_oriented_programming_software_development_topics_covered",
+                  "valueName": "topics_covered",
                   "title": "Topics covered by this course",
                   "visibleIf": "{panel.course_ref} notempty",
                   "isRequired": true,
@@ -617,7 +783,8 @@
                 },
                 {
                   "type": "comment",
-                  "name": "additional_explanation",
+                  "name": "object_oriented_programming_software_development_additional_explanation",
+                  "valueName": "additional_explanation",
                   "title": "Additional explanation (optional)",
                   "description": "Use this only if the connection is not clear from the official description.",
                   "visibleIf": "{panel.course_ref} notempty",
@@ -654,7 +821,8 @@
               "templateElements": [
                 {
                   "type": "dropdown",
-                  "name": "course_ref",
+                  "name": "data_modeling_databases_course_ref",
+                  "valueName": "course_ref",
                   "title": "Course",
                   "placeholder": "Select a course",
                   "isRequired": true,
@@ -664,7 +832,8 @@
                 },
                 {
                   "type": "checkbox",
-                  "name": "topics_covered",
+                  "name": "data_modeling_databases_topics_covered",
+                  "valueName": "topics_covered",
                   "title": "Topics covered by this course",
                   "visibleIf": "{panel.course_ref} notempty",
                   "isRequired": true,
@@ -675,7 +844,8 @@
                 },
                 {
                   "type": "comment",
-                  "name": "additional_explanation",
+                  "name": "data_modeling_databases_additional_explanation",
+                  "valueName": "additional_explanation",
                   "title": "Additional explanation (optional)",
                   "description": "Use this only if the connection is not clear from the official description.",
                   "visibleIf": "{panel.course_ref} notempty",
@@ -712,7 +882,8 @@
               "templateElements": [
                 {
                   "type": "dropdown",
-                  "name": "course_ref",
+                  "name": "machine_learning_data_mining_course_ref",
+                  "valueName": "course_ref",
                   "title": "Course",
                   "placeholder": "Select a course",
                   "isRequired": true,
@@ -722,7 +893,8 @@
                 },
                 {
                   "type": "checkbox",
-                  "name": "topics_covered",
+                  "name": "machine_learning_data_mining_topics_covered",
+                  "valueName": "topics_covered",
                   "title": "Topics covered by this course",
                   "visibleIf": "{panel.course_ref} notempty",
                   "isRequired": true,
@@ -736,7 +908,8 @@
                 },
                 {
                   "type": "comment",
-                  "name": "additional_explanation",
+                  "name": "machine_learning_data_mining_additional_explanation",
+                  "valueName": "additional_explanation",
                   "title": "Additional explanation (optional)",
                   "description": "Use this only if the connection is not clear from the official description.",
                   "visibleIf": "{panel.course_ref} notempty",
@@ -773,7 +946,8 @@
               "templateElements": [
                 {
                   "type": "dropdown",
-                  "name": "course_ref",
+                  "name": "visualization_course_ref",
+                  "valueName": "course_ref",
                   "title": "Course",
                   "placeholder": "Select a course",
                   "isRequired": true,
@@ -783,7 +957,8 @@
                 },
                 {
                   "type": "checkbox",
-                  "name": "topics_covered",
+                  "name": "visualization_topics_covered",
+                  "valueName": "topics_covered",
                   "title": "Topics covered by this course",
                   "visibleIf": "{panel.course_ref} notempty",
                   "isRequired": true,
@@ -795,7 +970,8 @@
                 },
                 {
                   "type": "comment",
-                  "name": "additional_explanation",
+                  "name": "visualization_additional_explanation",
+                  "valueName": "additional_explanation",
                   "title": "Additional explanation (optional)",
                   "description": "Use this only if the connection is not clear from the official description.",
                   "visibleIf": "{panel.course_ref} notempty",
@@ -832,7 +1008,8 @@
               "templateElements": [
                 {
                   "type": "dropdown",
-                  "name": "course_ref",
+                  "name": "group_project_work_course_ref",
+                  "valueName": "course_ref",
                   "title": "Course",
                   "placeholder": "Select a course",
                   "isRequired": true,
@@ -842,7 +1019,8 @@
                 },
                 {
                   "type": "checkbox",
-                  "name": "topics_covered",
+                  "name": "group_project_work_topics_covered",
+                  "valueName": "topics_covered",
                   "title": "Topics covered by this course",
                   "visibleIf": "{panel.course_ref} notempty",
                   "isRequired": true,
@@ -852,7 +1030,8 @@
                 },
                 {
                   "type": "comment",
-                  "name": "additional_explanation",
+                  "name": "group_project_work_additional_explanation",
+                  "valueName": "additional_explanation",
                   "title": "Additional explanation (optional)",
                   "description": "Use this only if the connection is not clear from the official description.",
                   "visibleIf": "{panel.course_ref} notempty",

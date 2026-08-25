@@ -1,3 +1,5 @@
+import { getQuestionValueName } from "./surveyjs-question-utils.js";
+
 export const MAX_PREREQUISITE_USES_PER_COURSE = 3;
 
 const COURSE_USAGE_ERROR =
@@ -20,8 +22,9 @@ export function addPrerequisiteCourseUsageValidation(survey) {
   });
 
   survey.onDynamicPanelItemValueChanged.add((sender, options) => {
+    const changedQuestion = options.panel?.getQuestionByName(options.name);
     if (
-      options.name === "course_ref" &&
+      getQuestionValueName(changedQuestion) === "course_ref" &&
       isPrerequisiteEvidenceQuestion(options.question)
     ) {
       revalidateSelectedPrerequisiteCourses(sender);
@@ -44,7 +47,7 @@ function revalidateSelectedPrerequisiteCourses(survey) {
 function getPrerequisiteCourseQuestions(survey) {
   return getPrerequisiteEvidenceQuestions(survey).flatMap((evidence) =>
     evidence.panels
-      .map((panel) => panel.getQuestionByName("course_ref"))
+      .map((panel) => panel.getQuestionByValueName("course_ref"))
       .filter(Boolean),
   );
 }
@@ -63,7 +66,7 @@ function getPrerequisiteEvidenceQuestions(survey) {
 
 function isPrerequisiteCourseQuestion(question) {
   return (
-    question.name === "course_ref" &&
+    getQuestionValueName(question) === "course_ref" &&
     isPrerequisiteEvidenceQuestion(question.parentQuestion)
   );
 }
