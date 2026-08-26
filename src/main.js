@@ -19,7 +19,10 @@ import {
   getPdfFilename,
 } from "./pdf.js";
 import { addPrerequisiteKnowledgeContent } from "./prerequisite-content.js";
-import { addPrerequisiteCourseUsageValidation } from "./prerequisite-validation.js";
+import {
+  addPrerequisiteCourseUsageValidation,
+  addPrerequisiteSubjectCourseChoiceAvailability,
+} from "./prerequisite-validation.js";
 import "./styles.scss";
 
 const FORM_VERSION = __FORM_VERSION__;
@@ -45,6 +48,9 @@ survey.focusFirstQuestionAutomatic = false;
 survey.showCompleteButton = false;
 addPrerequisiteKnowledgeContent(survey);
 addPrerequisiteCourseUsageValidation(survey);
+if (FORM_VERSION === "2026-2027") {
+  addPrerequisiteSubjectCourseChoiceAvailability(survey);
+}
 
 const reportTemplate = requiredElement("reportPageTemplate");
 

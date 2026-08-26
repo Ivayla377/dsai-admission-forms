@@ -10,7 +10,7 @@ const CREDIT_SYSTEM_LABELS = Object.freeze({
   us_semester_credits: "US semester credits",
   us_quarter_credits: "US quarter credits",
   uk_cats: "UK credits (CATS)",
-  other: "Other credit system",
+  other: "Other",
 });
 
 const GRADING_SYSTEM_LABELS = Object.freeze({
@@ -123,12 +123,6 @@ export function buildPdfDefinition(output, { logoUrl = "" } = {}) {
         color: "#111111",
         margin: [0, 18, 0, 8],
       },
-      subsectionHeading: {
-        fontSize: 10.5,
-        bold: true,
-        color: "#111111",
-        margin: [0, 4, 0, 6],
-      },
       degreeHeading: {
         fontSize: 10.5,
         bold: true,
@@ -200,7 +194,7 @@ function buildReportHeading(output, logoUrl) {
   const textColumn = {
     width: "*",
     stack: [
-      { text: "Additional Admissions Form", style: "reportTitle" },
+      { text: "DS&AI Additional Admissions Form", style: "reportTitle" },
       {
         text: `Applicant report · Academic year ${output.formVersion}`,
         style: "reportSubtitle",
@@ -282,24 +276,35 @@ function buildCourseSection(course, index, studiesByReference) {
         "Course credits",
         formatCourseCredits(course, study),
       ],
-      ["Final grade", course.finalGrade],
+      ["Final grade", formatCourseGrade(course)],
       ["Official course description", course.officialDescription],
     ]),
   ];
 }
 
 function formatCourseCredits(course, study) {
+  const convertedCredits = Number.isFinite(course.courseEC)
+    ? ` (${formatEC(course.courseEC)} EC)`
+    : "";
+
   if (!study) {
-    return String(course.credits);
+    return `${course.credits}${convertedCredits}`;
   }
 
   const creditSystem = getCreditSystemLabel(study);
-  return `${course.credits} / ${study.totalDegreeCredits} ${creditSystem}`;
+  return (
+    `${course.credits} / ${study.totalDegreeCredits} ` +
+    `${creditSystem}${convertedCredits}`
+  );
+}
+
+function formatCourseGrade(course) {
+  return course.isPassFail ? "Pass" : course.finalGrade;
 }
 
 function getCreditSystemLabel(study) {
   if (study.creditSystem === "other") {
-    return study.creditSystemOther;
+    return study.creditSystemOther || CREDIT_SYSTEM_LABELS.other;
   }
 
   return CREDIT_SYSTEM_LABELS[study.creditSystem] ?? study.creditSystem;
@@ -326,54 +331,13 @@ function buildPrerequisiteCoverage(output) {
 
   return [
     {
-      stack: [
-        {
-          text: "Prerequisite coverage",
-          style: "sectionHeading",
-        },
-        {
-          text: "Overview",
-          style: "subsectionHeading",
-        },
-        buildCoverageOverviewTable(output.prerequisiteCoverage),
-      ],
-      unbreakable: true,
+      text: "Prerequisite coverage",
+      style: "sectionHeading",
     },
     ...output.prerequisiteCoverage.flatMap((requirement, index) =>
       buildRequirementSection(requirement, index + 1, coursesByReference),
     ),
   ];
-}
-
-function buildCoverageOverviewTable(requirements) {
-  const rows = requirements.map((requirement, index) => [
-    {
-      text: `${index + 1}. ${requirement.requirementTitle}`,
-      style: "tableLabel",
-      fillColor: "#f4f4f4",
-    },
-    toTableCell(getCoverageStatus(requirement)),
-  ]);
-
-  return standardTable(["*", 155], rows);
-}
-
-function getCoverageStatus(requirement) {
-  const coveredTopics = new Set(
-    requirement.courseEvidence.flatMap((evidence) => evidence.topicsCovered),
-  );
-  const coveredCount = requirement.topics.filter((topic) =>
-    coveredTopics.has(topic),
-  ).length;
-  const topicCount = requirement.topics.length;
-
-  if (coveredCount === 0 || topicCount === 0) {
-    return "Not covered";
-  }
-  if (coveredCount === topicCount) {
-    return `Covered (${coveredCount} of ${topicCount})`;
-  }
-  return `Partially covered (${coveredCount} of ${topicCount})`;
 }
 
 function buildRequirementSection(
@@ -479,12 +443,20 @@ function buildCoveredByCell(courseEvidence, topic, coursesByReference) {
 }
 
 function formatCoveredByCourse({ course, courseNumber, study }) {
-  const creditSystem = study ? ` ${getCreditSystemLabel(study)}` : "";
+  const credits = Number.isFinite(course.courseEC)
+    ? `${formatEC(course.courseEC)} EC`
+    : `${course.credits}${study ? ` ${getCreditSystemLabel(study)}` : ""}`;
 
   return {
     label: `Course ${courseNumber}`,
-    details: ` · ${course.credits}${creditSystem} · grade ${course.finalGrade}`,
+    details: ` · ${credits} · grade ${formatCourseGrade(course)}`,
   };
+}
+
+function formatEC(value) {
+  return new Intl.NumberFormat("en-GB", {
+    maximumFractionDigits: 2,
+  }).format(value);
 }
 
 function buildAdditionalExplanations(requirement, coursesByReference) {

@@ -58,6 +58,8 @@ It contains SurveyJS, pdfmake, fonts, styles, the active Form JSON, the Output J
   runtime content, and controls report generation and downloads.
 - `src/styles.scss` contains the shared form and Report page styling.
 - `src/output.js` converts SurveyJS answers into validated Output JSON.
+- `src/credit-conversion.js` contains the documented course-credit-to-EC
+  conversion used by output and report generation.
 - `src/pdf.js` defines and generates the human-readable PDF report, including
   its embedded Output JSON attachment.
 - `scripts/build-form.mjs` and `vite.config.js` create the standalone offline

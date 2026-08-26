@@ -135,15 +135,21 @@ select {
 }
 
 #surveyElement .sd-title,
-#surveyElement .sd-page__title {
+#surveyElement .sd-page__title,
+#surveyElement .form-section-title {
   color: var(--ink);
   font-weight: 600;
 }
 
-#surveyElement .sd-page__title {
+#surveyElement .sd-page__title,
+#surveyElement .form-section-title {
   font-size: 1.7rem;
   line-height: 1.2;
   margin-bottom: 8px;
+}
+
+#surveyElement .form-section-title {
+  margin-top: 8px;
 }
 
 #surveyElement .sd-question__description,
@@ -229,6 +235,13 @@ select {
 
 #surveyElement .sd-question {
   border-radius: 4px;
+}
+
+// Make the generated "Passed" value visibly read-only without muting other
+// conditionally disabled fields in the form.
+#surveyElement [data-name="final_grade"] .sd-input--readonly {
+  color: var(--muted);
+  -webkit-text-fill-color: var(--muted);
 }
 
 #surveyElement .sd-paneldynamic__add-btn {

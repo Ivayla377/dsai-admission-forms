@@ -60,6 +60,108 @@
       }
     }
   },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "formVersion": {
+            "const": "2026-2027"
+          }
+        },
+        "required": ["formVersion"]
+      },
+      "then": {
+        "properties": {
+          "previousStudies": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "gradingSystem": {
+                  "not": {
+                    "const": "pass_fail"
+                  }
+                }
+              },
+              "not": {
+                "required": ["creditSystemOther"]
+              }
+            }
+          },
+          "courses": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["courseEC", "isPassFail"],
+              "allOf": [
+                {
+                  "if": {
+                    "properties": {
+                      "isPassFail": {
+                        "const": true
+                      }
+                    },
+                    "required": ["isPassFail"]
+                  },
+                  "then": {
+                    "properties": {
+                      "finalGrade": {
+                        "type": "null"
+                      }
+                    }
+                  },
+                  "else": {
+                    "properties": {
+                      "finalGrade": {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "formVersion": {
+            "const": "2025-2026"
+          }
+        },
+        "required": ["formVersion"]
+      },
+      "then": {
+        "properties": {
+          "previousStudies": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["creditSystemOther"]
+            }
+          },
+          "courses": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "not": {
+                "required": ["isPassFail"]
+              },
+              "properties": {
+                "finalGrade": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  ],
   "$defs": {
     "applicant": {
       "type": "object",
@@ -89,7 +191,6 @@
         "fullTimeEquivalentDurationYears",
         "totalDegreeCredits",
         "creditSystem",
-        "creditSystemOther",
         "gradingSystem",
         "gradingSystemInformation",
         "bestGrade",
@@ -293,8 +394,17 @@
           "exclusiveMinimum": 0,
           "maximum": 10000
         },
+        "courseEC": {
+          "description": "Course credits converted to European Credits (EC) for form versions that enable automatic conversion.",
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "isPassFail": {
+          "description": "Whether the course was assessed on a Pass/Fail basis.",
+          "type": "boolean"
+        },
         "finalGrade": {
-          "type": "string",
+          "type": ["string", "null"],
           "minLength": 1,
           "maxLength": 120
         },

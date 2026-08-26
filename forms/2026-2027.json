@@ -13,11 +13,18 @@
     {
       "name": "applicant_details",
       "title": "About this form",
+      "navigationTitle": "1. Applicant details",
       "elements": [
         {
           "type": "html",
           "name": "form_instructions",
-          "html": "<div class=\"form-instructions\"><p>This additional form helps the admissions committee determine how your previous studies meet the specific admission requirements for MSc Data Science and Artificial Intelligence.</p><p>Complete the form as follows:</p><ol><li><strong>Applicant details</strong> - enter your personal information as it appears in your application.</li><li><strong>Previous studies</strong> - provide information about the degree(s) relevant to your application.</li><li><strong>Admission requirements</strong> - review the prerequisite subjects and topics.</li><li><strong>Relevant courses</strong> - add the passed courses from those degrees that you want to use as evidence for the admission prerequisites.</li><li><strong>Prerequisite coverage</strong> - indicate which of your relevant courses provide evidence for each prerequisite subject.</li></ol><p>Complete all sections in English. Before you begin, have the official academic documents submitted with your application available. If an official English translation was submitted, use that version when completing this form.</p><p>After completing the form, generate and review the PDF report, then <strong>upload this PDF to OSIRIS.</strong></p></div>",
+          "html": "<div class=\"form-instructions\"><p>This additional form helps the admissions committee determine how your previous studies meet the specific admission requirements for MSc Data Science and Artificial Intelligence.</p><p>Complete the form as follows:</p><ol><li><strong>Applicant details</strong> - enter your personal information as it appears in your application.</li><li><strong>Previous studies</strong> - provide information about the degree(s) relevant to your application.</li><li><strong>Admission requirements and relevant courses</strong> - review the prerequisite subjects and topics, then add the passed courses you want to use as evidence.</li><li><strong>Prerequisite coverage</strong> - indicate which of your relevant courses provide evidence for each prerequisite subject.</li><li><strong>Report generation</strong> - generate and review the PDF report.</li></ol><p>Complete all sections in English. Before you begin, have the official academic documents submitted with your application available. If an official English translation was submitted, use that version when completing this form.</p><p>After completing the form, generate and review the PDF report, then <strong>upload this PDF to OSIRIS.</strong></p></div>",
+          "showNumber": false
+        },
+        {
+          "type": "html",
+          "name": "applicant_details_heading",
+          "html": "<h2 class=\"form-section-title\">1. Applicant details</h2>",
           "showNumber": false
         },
         {
@@ -54,7 +61,7 @@
     },
     {
       "name": "previous_studies_page",
-      "title": "Previous studies",
+      "title": "2. Previous studies",
       "elements": [
         {
           "type": "paneldynamic",
@@ -209,17 +216,6 @@
               "startWithNewLine": false
             },
             {
-              "type": "text",
-              "name": "credit_system_other",
-              "title": "Other credit system",
-              "description": "Enter the name of the credit system.",
-              "visibleIf": "{panel.credit_system} = 'other'",
-              "requiredIf": "{panel.credit_system} = 'other'",
-              "clearIfInvisible": "onHidden",
-              "maxLength": 120,
-              "width": "50%"
-            },
-            {
               "type": "dropdown",
               "name": "grading_system",
               "title": "Grading system",
@@ -238,10 +234,6 @@
                 {
                   "value": "letter_grades",
                   "text": "Letter grades"
-                },
-                {
-                  "value": "pass_fail",
-                  "text": "Pass / Fail"
                 },
                 {
                   "value": "other",
@@ -268,8 +260,8 @@
               "name": "best_grade",
               "title": "Best possible grade",
               "description": "Enter the best possible grade in this grading system, exactly as it is written (for example, 10, 1.0 or A+).",
-              "visibleIf": "{panel.grading_system} notempty and {panel.grading_system} != 'pass_fail'",
-              "requiredIf": "{panel.grading_system} notempty and {panel.grading_system} != 'pass_fail'",
+              "visibleIf": "{panel.grading_system} notempty",
+              "requiredIf": "{panel.grading_system} notempty",
               "clearIfInvisible": "onHidden",
               "maxLength": 120,
               "width": "50%"
@@ -279,8 +271,8 @@
               "name": "minimum_passing_grade",
               "title": "Minimum passing grade",
               "description": "Enter the minimum grade required to pass, exactly as it is written (for example, 5.5, 4.0 or D).",
-              "visibleIf": "{panel.grading_system} notempty and {panel.grading_system} != 'pass_fail'",
-              "requiredIf": "{panel.grading_system} notempty and {panel.grading_system} != 'pass_fail'",
+              "visibleIf": "{panel.grading_system} notempty",
+              "requiredIf": "{panel.grading_system} notempty",
               "clearIfInvisible": "onHidden",
               "maxLength": 120,
               "width": "50%",
@@ -292,14 +284,14 @@
     },
     {
       "name": "relevant_courses_page",
-      "title": "Relevant courses",
+      "title": "3. Admission requirements and relevant courses",
       "description": "Add every passed course you want to use as evidence for the admission requirements. Add each course only once. On the following page, you will select which requirements each course supports.",
       "elements": [
         {
           "type": "panel",
           "name": "admission_requirements_reference",
           "title": "Admission requirements",
-          "description": "Review the prerequisite subjects and topics before adding your relevant courses.",
+          "description": "Review the prerequisite subjects and topics before adding your relevant courses.\n\nFor each of these subjects, you should provide evidence of about 5 EC in coursework on that subject. (One full year of study corresponds to 60 EC.) The topics listed must be present in that coursework, next to possibly other topics. Evidence is provided by referring to one or more of your courses and if the topics are not readily visible in the course descriptions, add a short note explaining why they are covered (if they are).",
           "showNumber": false,
           "state": "expanded",
           "elements": [
@@ -314,7 +306,7 @@
         {
           "type": "paneldynamic",
           "name": "relevant_courses",
-          "titleLocation": "hidden",
+          "title": "Relevant courses",
           "showNumber": false,
           "isRequired": true,
           "panelCount": 1,
@@ -365,12 +357,25 @@
               "startWithNewLine": false
             },
             {
+              "type": "boolean",
+              "name": "is_pass_fail",
+              "title": "This course is Pass/Fail",
+              "titleLocation": "hidden",
+              "renderAs": "checkbox",
+              "defaultValue": false,
+              "width": "50%"
+            },
+            {
               "type": "text",
               "name": "final_grade",
               "title": "Final grade",
               "description": "Enter the final grade exactly as shown in the official academic document used to complete this form; do not convert it.",
               "placeholder": "For example, 8.5 or A",
-              "isRequired": true,
+              "enableIf": "{panel.is_pass_fail} != true",
+              "requiredIf": "{panel.is_pass_fail} != true",
+              "setValueIf": "{panel.is_pass_fail} = true",
+              "setValueExpression": "'Passed'",
+              "resetValueIf": "{panel.is_pass_fail} != true",
               "maxLength": 120,
               "width": "50%"
             },
@@ -395,7 +400,7 @@
               "type": "comment",
               "name": "official_course_description",
               "title": "Official course description",
-              "description": "Copy the official description from the university study guide or course catalogue. If available, include the link to the official course page or catalogue.",
+              "description": "Copy the official description from the university study guide or course catalogue. Make sure it is complete, so including for example references for textbooks used. If available, include the link to the official course page or catalogue.",
               "isRequired": true,
               "autoGrow": true,
               "rows": 6,
@@ -422,13 +427,13 @@
     },
     {
       "name": "prerequisite_coverage_page",
-      "title": "Prerequisite coverage",
+      "title": "4. Prerequisite coverage",
       "description": "For each prerequisite add applicable courses and select the topics they cover. If you have no relevant course for a prerequisite, continue to the next one. Each prerequisite can be supported by up to 3 relevant courses. A single course may be used as evidence for at most 3 prerequisites.",
       "elements": [
         {
           "type": "panel",
           "name": "requirement_calculus",
-          "title": "Calculus (4 EC)",
+          "title": "Calculus",
           "showNumber": true,
           "elements": [
             {
@@ -441,7 +446,7 @@
               "maxPanelCount": 3,
               "panelsState": "firstExpanded",
               "confirmDelete": true,
-              "confirmDeleteText": "Remove this course from Calculus (4 EC)?",
+              "confirmDeleteText": "Remove this course from Calculus?",
               "addPanelText": "Add a relevant course",
               "removePanelText": "Remove course",
               "keyName": "course_ref",
@@ -491,7 +496,7 @@
         {
           "type": "panel",
           "name": "requirement_linear_algebra",
-          "title": "Linear Algebra (5 EC)",
+          "title": "Linear Algebra",
           "showNumber": true,
           "elements": [
             {
@@ -504,7 +509,7 @@
               "maxPanelCount": 3,
               "panelsState": "firstExpanded",
               "confirmDelete": true,
-              "confirmDeleteText": "Remove this course from Linear Algebra (5 EC)?",
+              "confirmDeleteText": "Remove this course from Linear Algebra?",
               "addPanelText": "Add a relevant course",
               "removePanelText": "Remove course",
               "keyName": "course_ref",
@@ -553,7 +558,7 @@
         {
           "type": "panel",
           "name": "requirement_probability_statistics",
-          "title": "Probability and Statistics (5 EC)",
+          "title": "Probability and Statistics",
           "showNumber": true,
           "elements": [
             {
@@ -566,7 +571,7 @@
               "maxPanelCount": 3,
               "panelsState": "firstExpanded",
               "confirmDelete": true,
-              "confirmDeleteText": "Remove this course from Probability and Statistics (5 EC)?",
+              "confirmDeleteText": "Remove this course from Probability and Statistics?",
               "addPanelText": "Add a relevant course",
               "removePanelText": "Remove course",
               "keyName": "course_ref",
@@ -615,7 +620,7 @@
         {
           "type": "panel",
           "name": "requirement_discrete_mathematics",
-          "title": "Discrete Mathematics (5 EC)",
+          "title": "Discrete Mathematics",
           "showNumber": true,
           "elements": [
             {
@@ -628,7 +633,7 @@
               "maxPanelCount": 3,
               "panelsState": "firstExpanded",
               "confirmDelete": true,
-              "confirmDeleteText": "Remove this course from Discrete Mathematics (5 EC)?",
+              "confirmDeleteText": "Remove this course from Discrete Mathematics?",
               "addPanelText": "Add a relevant course",
               "removePanelText": "Remove course",
               "keyName": "course_ref",
@@ -679,7 +684,7 @@
         {
           "type": "panel",
           "name": "requirement_data_structures_algorithms",
-          "title": "Data Structures and Algorithms (5 EC)",
+          "title": "Data Structures and Algorithms",
           "showNumber": true,
           "elements": [
             {
@@ -692,7 +697,7 @@
               "maxPanelCount": 3,
               "panelsState": "firstExpanded",
               "confirmDelete": true,
-              "confirmDeleteText": "Remove this course from Data Structures and Algorithms (5 EC)?",
+              "confirmDeleteText": "Remove this course from Data Structures and Algorithms?",
               "addPanelText": "Add a relevant course",
               "removePanelText": "Remove course",
               "keyName": "course_ref",
@@ -741,7 +746,7 @@
         {
           "type": "panel",
           "name": "requirement_programming_software_development",
-          "title": "Programming and Software Development (5 EC)",
+          "title": "Programming and Software Development",
           "showNumber": true,
           "elements": [
             {
@@ -754,7 +759,7 @@
               "maxPanelCount": 3,
               "panelsState": "firstExpanded",
               "confirmDelete": true,
-              "confirmDeleteText": "Remove this course from Programming and Software Development (5 EC)?",
+              "confirmDeleteText": "Remove this course from Programming and Software Development?",
               "addPanelText": "Add a relevant course",
               "removePanelText": "Remove course",
               "keyName": "course_ref",
@@ -864,7 +869,7 @@
         {
           "type": "panel",
           "name": "requirement_machine_learning_data_mining",
-          "title": "Machine Learning and Data Mining (5 EC)",
+          "title": "Machine Learning and Data Mining",
           "showNumber": true,
           "elements": [
             {
@@ -877,7 +882,7 @@
               "maxPanelCount": 3,
               "panelsState": "firstExpanded",
               "confirmDelete": true,
-              "confirmDeleteText": "Remove this course from Machine Learning and Data Mining (5 EC)?",
+              "confirmDeleteText": "Remove this course from Machine Learning and Data Mining?",
               "addPanelText": "Add a relevant course",
               "removePanelText": "Remove course",
               "keyName": "course_ref",
@@ -929,8 +934,8 @@
     },
     {
       "name": "application_report",
-      "title": "Report",
-      "navigationTitle": "Report",
+      "title": "5. Report generation",
+      "navigationTitle": "5. Report generation",
       "elements": []
     }
   ]

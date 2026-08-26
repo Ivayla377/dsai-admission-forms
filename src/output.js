@@ -2,6 +2,7 @@ import Ajv2020 from "ajv/dist/2020.js";
 import addFormats from "ajv-formats";
 
 import outputSchema from "../schemas/output-v1.schema.json" with { type: "json" };
+import { convertCourseCreditsToEC } from "./credit-conversion.js";
 import { MAX_PREREQUISITE_USES_PER_COURSE } from "./prerequisite-validation.js";
 import { getQuestionValueName } from "./surveyjs-question-utils.js";
 
@@ -33,11 +34,24 @@ export function buildOutput({
 
   const warnings = [];
   const personalInformation = surveyData.personal_info ?? {};
-  const previousStudies = asArray(surveyData.previous_studies).map(
-    (study, index) => normalizePreviousStudy(study, index, warnings),
+  const capturesOtherCreditSystem = hasFormElement(
+    formDefinition,
+    "credit_system_other",
   );
-  const courses = asArray(surveyData.relevant_courses).map((course, index) =>
-    normalizeCourse(course, index, warnings),
+  const capturesCoursePassFail = hasFormElement(
+    formDefinition,
+    "is_pass_fail",
+  );
+  const convertsCreditsToEC = !capturesOtherCreditSystem;
+  const previousStudies = asArray(surveyData.previous_studies).map(
+    (study, index) =>
+      normalizePreviousStudy(study, index, warnings, {
+        capturesOtherCreditSystem,
+      }),
+  );
+  const normalizedCourses = asArray(surveyData.relevant_courses).map(
+    (course, index) =>
+      normalizeCourse(course, index, warnings, { capturesCoursePassFail }),
   );
   const prerequisiteCoverage = normalizePrerequisiteCoverage({
     surveyData,
@@ -51,11 +65,23 @@ export function buildOutput({
     "study reference",
   );
   assertUniqueReferences(
-    courses,
+    normalizedCourses,
     (course) => course.courseReference,
     "course reference",
   );
-  assertCourseDegreeReferences(courses, previousStudies);
+  assertCourseDegreeReferences(normalizedCourses, previousStudies);
+  const studiesByReference = new Map(
+    previousStudies.map((study) => [study.studyReference, study]),
+  );
+  const courses = convertsCreditsToEC
+    ? normalizedCourses.map((course, index) =>
+        addCourseEC(
+          course,
+          index,
+          studiesByReference.get(course.degreeReference),
+        ),
+      )
+    : normalizedCourses;
   assertCoverageReferences(prerequisiteCoverage, courses);
   assertCourseUsageLimit(prerequisiteCoverage);
 
@@ -103,7 +129,12 @@ export function downloadOutputJson(output) {
   downloadBlob(blob, `dsai-admission-${output.formVersion}.json`);
 }
 
-function normalizePreviousStudy(study, index, warnings) {
+function normalizePreviousStudy(
+  study,
+  index,
+  warnings,
+  { capturesOtherCreditSystem },
+) {
   const path = `previousStudies[${index}]`;
   const creditSystem = normalizeText(
     study.credit_system,
@@ -148,14 +179,18 @@ function normalizePreviousStudy(study, index, warnings) {
     ),
     totalDegreeCredits: Number(study.total_degree_credits),
     creditSystem,
-    creditSystemOther:
-      creditSystem === "other"
-        ? normalizeText(
-            study.credit_system_other,
-            `${path}.creditSystemOther`,
-            warnings,
-          )
-        : null,
+    ...(capturesOtherCreditSystem
+      ? {
+          creditSystemOther:
+            creditSystem === "other"
+              ? normalizeText(
+                  study.credit_system_other,
+                  `${path}.creditSystemOther`,
+                  warnings,
+                )
+              : null,
+        }
+      : {}),
     gradingSystem,
     gradingSystemInformation: requiresGradingSystemInformation
       ? normalizeText(
@@ -177,7 +212,26 @@ function normalizePreviousStudy(study, index, warnings) {
   };
 }
 
-function normalizeCourse(course, index, warnings) {
+function addCourseEC(course, index, study) {
+  try {
+    return {
+      ...course,
+      courseEC: convertCourseCreditsToEC({
+        creditSystem: study.creditSystem,
+        courseCredits: course.credits,
+        totalDegreeCredits: study.totalDegreeCredits,
+        fullTimeEquivalentDurationYears:
+          study.fullTimeEquivalentDurationYears,
+      }),
+    };
+  } catch (error) {
+    throw new OutputValidationError(
+      `courses[${index}].courseEC could not be calculated: ${error.message}`,
+    );
+  }
+}
+
+function normalizeCourse(course, index, warnings, { capturesCoursePassFail }) {
   const path = `courses[${index}]`;
   const degreeReference = normalizeText(
     course.degree_ref,
@@ -202,6 +256,8 @@ function normalizeCourse(course, index, warnings) {
     );
   }
 
+  const isPassFail = capturesCoursePassFail && course.is_pass_fail === true;
+
   return {
     courseReference,
     degreeReference,
@@ -212,11 +268,14 @@ function normalizeCourse(course, index, warnings) {
     ),
     courseCode,
     credits: Number(course.course_credits),
-    finalGrade: normalizeText(
-      course.final_grade,
-      `${path}.finalGrade`,
-      warnings,
-    ),
+    ...(capturesCoursePassFail ? { isPassFail } : {}),
+    finalGrade: isPassFail
+      ? null
+      : normalizeText(
+          course.final_grade,
+          `${path}.finalGrade`,
+          warnings,
+        ),
     officialDescription: normalizeText(
       course.official_course_description,
       `${path}.officialDescription`,
@@ -292,6 +351,21 @@ function extractPrerequisiteRequirements(formDefinition) {
           element.type === "panel" && element.name?.startsWith("requirement_"),
       )
       .map(extractRequirementDefinition),
+  );
+}
+
+function hasFormElement(formDefinition, elementName) {
+  function containsElement(elements) {
+    return asArray(elements).some(
+      (element) =>
+        element.name === elementName ||
+        containsElement(element.elements) ||
+        containsElement(element.templateElements),
+    );
+  }
+
+  return asArray(formDefinition.pages).some((page) =>
+    containsElement(page.elements),
   );
 }
 
