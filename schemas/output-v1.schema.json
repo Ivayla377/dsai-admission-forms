@@ -121,6 +121,23 @@
                 }
               ]
             }
+          },
+          "prerequisiteCoverage": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "courseEvidence": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "not": {
+                      "required": ["topicsCovered"]
+                    }
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -154,6 +171,21 @@
                 "finalGrade": {
                   "type": "string",
                   "minLength": 1
+                }
+              }
+            }
+          },
+          "prerequisiteCoverage": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "courseEvidence": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": ["topicsCovered"]
+                  }
                 }
               }
             }
@@ -457,7 +489,6 @@
       "additionalProperties": false,
       "required": [
         "courseReference",
-        "topicsCovered",
         "additionalExplanation"
       ],
       "properties": {

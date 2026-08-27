@@ -1,6 +1,7 @@
 import pdfMake from "pdfmake/build/pdfmake.js";
 import pdfFonts from "pdfmake/build/vfs_fonts.js";
 
+import { convertCourseCreditsToEC } from "./credit-conversion.js";
 import { serializeOutputJson } from "./output.js";
 
 pdfMake.addVirtualFileSystem(pdfFonts);
@@ -24,9 +25,6 @@ const GRADING_SYSTEM_LABELS = Object.freeze({
 export function buildPdfDefinition(output, { logoUrl = "" } = {}) {
   const outputJson = serializeOutputJson(output);
   const attachmentName = `dsai-admission-${output.formVersion}.json`;
-  const studiesByReference = new Map(
-    output.previousStudies.map((study) => [study.studyReference, study]),
-  );
 
   return {
     info: {
@@ -53,7 +51,7 @@ export function buildPdfDefinition(output, { logoUrl = "" } = {}) {
     content: [
       buildReportHeading(output, logoUrl),
       {
-        text: "Applicant",
+        text: "1. Applicant",
         style: "sectionHeading",
       },
       detailsTable([
@@ -61,27 +59,18 @@ export function buildPdfDefinition(output, { logoUrl = "" } = {}) {
         ["TU/e student number", output.applicant.tueStudentNumber],
       ]),
       {
-        text: "Previous studies",
+        text: "2. Previous studies",
         style: "sectionHeading",
       },
-      ...output.previousStudies.flatMap((study, index) =>
-        buildPreviousStudySection(study, index),
-      ),
-      {
-        text: "Relevant courses",
-        style: "sectionHeading",
-      },
-      ...output.courses.flatMap((course, index) =>
-        buildCourseSection(course, index, studiesByReference),
+      ...output.previousStudies.flatMap((study) =>
+        buildPreviousStudySection(study),
       ),
       ...buildPrerequisiteCoverage(output),
-      {
-        text: "Embedded machine-readable information",
-        style: "sectionHeading",
-      },
+      ...buildUnusedCoursesWarning(output),
+      ...buildCourseGradeWarning(output),
       {
         text: `The validated Output JSON is embedded in this PDF as ${attachmentName}.`,
-        margin: [0, 0, 0, 6],
+        margin: [0, 18, 0, 6],
       },
       {
         text: `Output schema version: ${output.outputSchemaVersion}`,
@@ -123,18 +112,6 @@ export function buildPdfDefinition(output, { logoUrl = "" } = {}) {
         color: "#111111",
         margin: [0, 18, 0, 8],
       },
-      degreeHeading: {
-        fontSize: 10.5,
-        bold: true,
-        color: "#0a7d61",
-        margin: [0, 9, 0, 5],
-      },
-      courseHeading: {
-        fontSize: 10.5,
-        bold: true,
-        color: "#0a7d61",
-        margin: [0, 10, 0, 5],
-      },
       requirementHeading: {
         fontSize: 11,
         bold: true,
@@ -158,6 +135,17 @@ export function buildPdfDefinition(output, { logoUrl = "" } = {}) {
         color: "#8a5a00",
         fontSize: 8.5,
         margin: [0, 4, 0, 0],
+      },
+      reviewAlertHeading: {
+        fontSize: 10.5,
+        bold: true,
+        color: "#111111",
+        margin: [0, 14, 0, 5],
+      },
+      reviewAlertNotice: {
+        color: "#5f6368",
+        fontSize: 9,
+        margin: [0, 0, 0, 6],
       },
       pageHeader: {
         color: "#5f6368",
@@ -196,7 +184,7 @@ function buildReportHeading(output, logoUrl) {
     stack: [
       { text: "DS&AI Additional Admissions Form", style: "reportTitle" },
       {
-        text: `Applicant report · Academic year ${output.formVersion}`,
+        text: `Academic year ${output.formVersion}`,
         style: "reportSubtitle",
       },
     ],
@@ -213,6 +201,7 @@ function buildReportHeading(output, logoUrl) {
         image: logoUrl,
         width: 58,
         alignment: "right",
+        margin: [0, -18, 0, 0],
       },
     ],
     columnGap: 16,
@@ -220,7 +209,7 @@ function buildReportHeading(output, logoUrl) {
   };
 }
 
-function buildPreviousStudySection(study, index) {
+function buildPreviousStudySection(study) {
   const details = [
     ["Degree programme", study.degreeProgrammeName],
     ["Graduation date", formatDate(study.graduationDate)],
@@ -251,51 +240,7 @@ function buildPreviousStudySection(study, index) {
     ]);
   }
 
-  return [
-    {
-      text: `Degree ${index + 1}: ${study.degreeProgrammeName}`,
-      style: "degreeHeading",
-    },
-    detailsTable(details),
-  ];
-}
-
-function buildCourseSection(course, index, studiesByReference) {
-  const study = studiesByReference.get(course.degreeReference);
-  const degreeLabel = study
-    ? `${study.degreeProgrammeName} — ${study.universityName}`
-    : course.degreeReference;
-  return [
-    {
-      text: `Course ${index + 1}: ${course.courseCode} ${course.courseTitle}`,
-      style: "courseHeading",
-    },
-    detailsTable([
-      ["Degree", degreeLabel],
-      [
-        "Course credits",
-        formatCourseCredits(course, study),
-      ],
-      ["Final grade", formatCourseGrade(course)],
-      ["Official course description", course.officialDescription],
-    ]),
-  ];
-}
-
-function formatCourseCredits(course, study) {
-  const convertedCredits = Number.isFinite(course.courseEC)
-    ? ` (${formatEC(course.courseEC)} EC)`
-    : "";
-
-  if (!study) {
-    return `${course.credits}${convertedCredits}`;
-  }
-
-  const creditSystem = getCreditSystemLabel(study);
-  return (
-    `${course.credits} / ${study.totalDegreeCredits} ` +
-    `${creditSystem}${convertedCredits}`
-  );
+  return [detailsTable(details)];
 }
 
 function formatCourseGrade(course) {
@@ -315,173 +260,323 @@ function formatStudyDuration(years) {
 }
 
 function buildPrerequisiteCoverage(output) {
-  const studiesByReference = new Map(
-    output.previousStudies.map((study) => [study.studyReference, study]),
-  );
+  const studiesByReference = buildStudiesByReference(output.previousStudies);
   const coursesByReference = new Map(
-    output.courses.map((course, index) => [
-      course.courseReference,
-      {
-        course,
-        courseNumber: index + 1,
-        study: studiesByReference.get(course.degreeReference),
-      },
-    ]),
+    output.courses.map((course) => {
+      const studyEntry = studiesByReference.get(course.degreeReference);
+      return [
+        course.courseReference,
+        {
+          course,
+          study: studyEntry?.study,
+          degreeNumber: studyEntry?.degreeNumber,
+        },
+      ];
+    }),
+  );
+  const requirementsByCourse = buildRequirementsByCourse(
+    output.prerequisiteCoverage,
   );
 
   return [
     {
-      text: "Prerequisite coverage",
+      text: "3. Prerequisite coverage",
       style: "sectionHeading",
     },
     ...output.prerequisiteCoverage.flatMap((requirement, index) =>
-      buildRequirementSection(requirement, index + 1, coursesByReference),
+      buildRequirementSection(
+        requirement,
+        index + 1,
+        coursesByReference,
+        requirementsByCourse,
+      ),
     ),
   ];
+}
+
+function buildUnusedCoursesWarning(output) {
+  const usedCourseReferences = new Set(
+    output.prerequisiteCoverage.flatMap((requirement) =>
+      requirement.courseEvidence.map((evidence) => evidence.courseReference),
+    ),
+  );
+  const unusedCourses = output.courses.filter(
+    (course) => !usedCourseReferences.has(course.courseReference),
+  );
+
+  if (!unusedCourses.length) return [];
+
+  const studiesByReference = buildStudiesByReference(output.previousStudies);
+
+  return [
+    {
+      text: "Review alert: unused relevant courses",
+      style: "reviewAlertHeading",
+    },
+    {
+      text: "The following entered courses are not used as evidence for any prerequisite subject.",
+      style: "reviewAlertNotice",
+    },
+    ...unusedCourses.map((course) => {
+      const studyEntry = studiesByReference.get(course.degreeReference);
+      if (!studyEntry) {
+        throw new Error(
+          `Cannot generate unused course details for unknown degree reference "${course.degreeReference}".`,
+        );
+      }
+
+      return buildCourseEvidenceTable({
+        course,
+        study: studyEntry.study,
+        degreeNumber: studyEntry.degreeNumber,
+        additionalExplanation: "-",
+        alsoUsedFor: "-",
+      });
+    }),
+  ];
+}
+
+function buildCourseGradeWarning(output) {
+  const studiesByReference = new Map(
+    output.previousStudies.map((study) => [study.studyReference, study]),
+  );
+  const coursesBelowPassingGrade = [];
+
+  for (const course of output.courses) {
+    if (course.isPassFail) continue;
+
+    const study = studiesByReference.get(course.degreeReference);
+    if (!study) {
+      throw new Error(
+        `Cannot review the grade for unknown degree reference "${course.degreeReference}".`,
+      );
+    }
+    if (
+      !["numeric_higher_better", "numeric_lower_better"].includes(
+        study.gradingSystem,
+      )
+    ) {
+      continue;
+    }
+
+    const courseGrade = parseNumericGrade(course.finalGrade);
+    const passingGrade = parseNumericGrade(study.minimumPassingGrade);
+    if (courseGrade === null || passingGrade === null) continue;
+
+    const doesNotMeetPassingThreshold =
+      study.gradingSystem === "numeric_higher_better"
+        ? courseGrade < passingGrade
+        : courseGrade > passingGrade;
+
+    if (doesNotMeetPassingThreshold) {
+      coursesBelowPassingGrade.push({ course, study });
+    }
+  }
+
+  if (!coursesBelowPassingGrade.length) return [];
+
+  const body = [
+    ["Course code", "Course title", "Grade", "University", "Passing grade"].map(
+      (label) => ({
+        text: label,
+        style: "tableLabel",
+        fillColor: "#f4f4f4",
+      }),
+    ),
+    ...coursesBelowPassingGrade.map(({ course, study }) => [
+      toTableCell(course.courseCode),
+      toTableCell(course.courseTitle),
+      toTableCell(formatCourseGrade(course)),
+      toTableCell(study.universityName),
+      toTableCell(study.minimumPassingGrade),
+    ]),
+  ];
+
+  return [
+    {
+      text: "Review alert: course grade may not meet the passing requirement",
+      style: "reviewAlertHeading",
+    },
+    {
+      text: "The following numeric course grades appear not to meet the passing threshold of their corresponding degree. Review the entered grades and grading systems.",
+      style: "reviewAlertNotice",
+    },
+    standardTable([65, "*", 45, 120, 65], body),
+  ];
+}
+
+function parseNumericGrade(value) {
+  const normalized = String(value ?? "").trim().replace(",", ".");
+  if (!/^[+-]?(?:\d+(?:\.\d+)?|\.\d+)$/.test(normalized)) return null;
+
+  const grade = Number(normalized);
+  return Number.isFinite(grade) ? grade : null;
+}
+
+function buildStudiesByReference(studies) {
+  return new Map(
+    studies.map((study, index) => [
+      study.studyReference,
+      { study, degreeNumber: index + 1 },
+    ]),
+  );
+}
+
+function buildRequirementsByCourse(requirements) {
+  const requirementsByCourse = new Map();
+
+  for (const requirement of requirements) {
+    for (const evidence of requirement.courseEvidence) {
+      const uses = requirementsByCourse.get(evidence.courseReference) ?? [];
+      uses.push(requirement);
+      requirementsByCourse.set(evidence.courseReference, uses);
+    }
+  }
+
+  return requirementsByCourse;
 }
 
 function buildRequirementSection(
   requirement,
   requirementNumber,
   coursesByReference,
+  requirementsByCourse,
 ) {
-  const heading = {
-    text: `${requirementNumber}. ${requirement.requirementTitle}`,
-    style: "requirementHeading",
-  };
-  const knowledgeTable = buildRequiredKnowledgeTable(
-    requirement,
-    coursesByReference,
-  );
-  const explanations = buildAdditionalExplanations(
-    requirement,
-    coursesByReference,
-  );
+  const content = [
+    {
+      text: `3.${requirementNumber} ${requirement.requirementTitle}`,
+      style: "requirementHeading",
+    },
+    {
+      text: "Required topics",
+      style: "tableLabel",
+      margin: [0, 0, 0, 3],
+    },
+    {
+      ul: requirement.topics,
+      margin: [12, 0, 0, 7],
+    },
+    {
+      text: "Evidence",
+      style: "tableLabel",
+      margin: [0, 0, 0, 3],
+    },
+  ];
 
   if (!requirement.courseEvidence.length) {
-    return [
-      {
-        stack: [
-          heading,
-          knowledgeTable,
-          {
-            text: "No relevant course selected.",
-            style: "muted",
-            margin: [0, 0, 0, 4],
-          },
-        ],
-        unbreakable: true,
-      },
-    ];
+    content.push({
+      text: "No relevant course selected.",
+      style: "muted",
+      margin: [0, 0, 0, 4],
+    });
+    return content;
   }
 
+  content.push(
+    ...requirement.courseEvidence.flatMap((evidence) =>
+      buildEvidenceCourseSection(
+        evidence,
+        requirement,
+        coursesByReference,
+        requirementsByCourse,
+      ),
+    ),
+  );
+
+  return content;
+}
+
+function buildEvidenceCourseSection(
+  evidence,
+  currentRequirement,
+  coursesByReference,
+  requirementsByCourse,
+) {
+  const courseEntry = coursesByReference.get(evidence.courseReference);
+  if (!courseEntry?.study) {
+    throw new Error(
+      `Cannot generate course evidence for unknown reference "${evidence.courseReference}".`,
+    );
+  }
+
+  const { course, study, degreeNumber } = courseEntry;
+  const otherRequirements = (
+    requirementsByCourse.get(evidence.courseReference) ?? []
+  ).filter(
+    (requirement) =>
+      requirement.requirementReference !== currentRequirement.requirementReference,
+  );
   return [
-    {
-      stack: [heading, knowledgeTable],
-      unbreakable: true,
-    },
-    ...explanations,
+    buildCourseEvidenceTable({
+      course,
+      study,
+      degreeNumber,
+      additionalExplanation: evidence.additionalExplanation || "-",
+      alsoUsedFor: otherRequirements.length
+        ? otherRequirements
+            .map((requirement) => requirement.requirementTitle)
+            .join(", ")
+        : "-",
+    }),
   ];
 }
 
-function buildRequiredKnowledgeTable(requirement, coursesByReference) {
-  const rows = requirement.topics.map((topic) => [
-    toTableCell(topic),
-    buildCoveredByCell(requirement.courseEvidence, topic, coursesByReference),
-  ]);
-
-  return standardTable(
-    ["*", 140],
+function buildCourseEvidenceTable({
+  course,
+  study,
+  degreeNumber,
+  additionalExplanation,
+  alsoUsedFor,
+}) {
+  const body = [
+    ["Course code", "Course title", "EC", "Grade"].map((label) => ({
+      text: label,
+      style: "tableLabel",
+      fillColor: "#f4f4f4",
+    })),
     [
-      [
-        {
-          text: "Required knowledge",
-          style: "tableLabel",
-          fillColor: "#f4f4f4",
-        },
-        {
-          text: "Covered by",
-          style: "tableLabel",
-          fillColor: "#f4f4f4",
-        },
-      ],
-      ...rows,
+      toTableCell(course.courseCode),
+      toTableCell(course.courseTitle),
+      toTableCell(formatEC(convertCourseToEC(course, study))),
+      toTableCell(formatCourseGrade(course)),
     ],
-  );
+    mergedEvidenceRow(
+      "Degree",
+      `Degree ${degreeNumber}: ${study.degreeProgrammeName} (${study.universityName})`,
+    ),
+    mergedEvidenceRow(
+      "Official course description",
+      course.officialDescription,
+    ),
+    mergedEvidenceRow("Additional explanation", additionalExplanation),
+    mergedEvidenceRow("Also used for", alsoUsedFor),
+  ];
+
+  return standardTable([105, "*", 40, 48], body);
 }
 
-function buildCoveredByCell(courseEvidence, topic, coursesByReference) {
-  const coveredByCourses = courseEvidence
-    .filter((evidence) => evidence.topicsCovered.includes(topic))
-    .map((evidence) => {
-      const courseEntry = coursesByReference.get(evidence.courseReference);
-      return courseEntry
-        ? formatCoveredByCourse(courseEntry)
-        : evidence.courseReference;
-    });
-
-  if (!coveredByCourses.length) {
-    return toTableCell("");
-  }
-
-  return {
-    text: coveredByCourses.flatMap((course, index) => {
-      if (typeof course === "string") {
-        return [
-          ...(index > 0 ? ["\n"] : []),
-          { text: course, bold: true, color: "#0a7d61" },
-        ];
-      }
-
-      return [
-        ...(index > 0 ? ["\n"] : []),
-        { text: course.label, bold: true, color: "#0a7d61" },
-        { text: course.details, color: "#5f6368" },
-      ];
-    }),
-  };
+function mergedEvidenceRow(label, value) {
+  return [
+    { text: label, style: "tableLabel", fillColor: "#f4f4f4" },
+    { text: addPdfSoftBreaks(pdfDisplayValue(value)), colSpan: 3 },
+    {},
+    {},
+  ];
 }
 
-function formatCoveredByCourse({ course, courseNumber, study }) {
-  const credits = Number.isFinite(course.courseEC)
-    ? `${formatEC(course.courseEC)} EC`
-    : `${course.credits}${study ? ` ${getCreditSystemLabel(study)}` : ""}`;
-
-  return {
-    label: `Course ${courseNumber}`,
-    details: ` · ${credits} · grade ${formatCourseGrade(course)}`,
-  };
+function convertCourseToEC(course, study) {
+  return convertCourseCreditsToEC({
+    creditSystem: study.creditSystem,
+    courseCredits: course.credits,
+    totalDegreeCredits: study.totalDegreeCredits,
+    fullTimeEquivalentDurationYears: study.fullTimeEquivalentDurationYears,
+  });
 }
 
 function formatEC(value) {
   return new Intl.NumberFormat("en-GB", {
     maximumFractionDigits: 2,
   }).format(value);
-}
-
-function buildAdditionalExplanations(requirement, coursesByReference) {
-  return requirement.courseEvidence.flatMap((evidence) => {
-    if (!evidence.additionalExplanation) {
-      return [];
-    }
-
-    const courseEntry = coursesByReference.get(evidence.courseReference);
-    const courseLabel = courseEntry
-      ? `Course ${courseEntry.courseNumber}`
-      : evidence.courseReference;
-
-    return [
-      {
-        text: `Additional explanation \u2014 ${courseLabel}`,
-        style: "tableLabel",
-        margin: [0, 5, 0, 2],
-      },
-      {
-        text: evidence.additionalExplanation,
-        margin: [0, 0, 0, 5],
-      },
-    ];
-  });
 }
 
 function detailsTable(rows) {
@@ -514,7 +609,26 @@ function toTableCell(value) {
     return value;
   }
 
-  return { text: value || "—" };
+  return { text: addPdfSoftBreaks(pdfDisplayValue(value)) };
+}
+
+function pdfDisplayValue(value) {
+  return value === undefined || value === null || value === "" ? "-" : value;
+}
+
+// pdfmake does not split very long tokens, which can force a table beyond the
+// page boundary. Zero-width spaces add PDF-only wrapping opportunities without
+// changing the visible text or the embedded Output JSON.
+function addPdfSoftBreaks(value) {
+  return String(value).replace(/\S{19,}/gu, (token) => {
+    const characters = Array.from(token);
+    const chunks = [];
+
+    for (let index = 0; index < characters.length; index += 18) {
+      chunks.push(characters.slice(index, index + 18).join(""));
+    }
+    return chunks.join("\u200B");
+  });
 }
 
 function buildWarnings(warnings) {

@@ -18,7 +18,7 @@
         {
           "type": "html",
           "name": "form_instructions",
-          "html": "<div class=\"form-instructions\"><p>This additional form helps the admissions committee determine how your previous studies meet the specific admission requirements for MSc Data Science and Artificial Intelligence.</p><p>Complete the form as follows:</p><ol><li><strong>Applicant details</strong> - enter your personal information as it appears in your application.</li><li><strong>Previous studies</strong> - provide information about the degree(s) relevant to your application.</li><li><strong>Admission requirements and relevant courses</strong> - review the prerequisite subjects and topics, then add the passed courses you want to use as evidence.</li><li><strong>Prerequisite coverage</strong> - indicate which of your relevant courses provide evidence for each prerequisite subject.</li><li><strong>Report generation</strong> - generate and review the PDF report.</li></ol><p>Complete all sections in English. Before you begin, have the official academic documents submitted with your application available. If an official English translation was submitted, use that version when completing this form.</p><p>After completing the form, generate and review the PDF report, then <strong>upload this PDF to OSIRIS.</strong></p></div>",
+          "html": "<div class=\"form-instructions\"><p>This additional form helps the admissions committee determine how your previous studies meet the specific admission requirements for MSc Data Science and Artificial Intelligence.</p><p>Complete the form as follows:</p><ol><li><strong>Applicant details</strong> - enter your personal information as it appears in your application.</li><li><strong>Previous studies</strong> - provide information about the degree(s) relevant to your application.</li><li><strong>Relevant courses</strong> - review the prerequisite subjects and topics, then add the passed courses you want to use as evidence.</li><li><strong>Prerequisite coverage</strong> - indicate which of your relevant courses provide evidence for each prerequisite subject.</li><li><strong>Report generation</strong> - generate and review the PDF report.</li></ol><p>Complete all sections in English. Before you begin, have the official academic documents submitted with your application available. If an official English translation was submitted, use that version when completing this form.</p><p>After completing the form, generate and review the PDF report, then <strong>upload this PDF to OSIRIS.</strong></p></div>",
           "showNumber": false
         },
         {
@@ -284,7 +284,7 @@
     },
     {
       "name": "relevant_courses_page",
-      "title": "3. Admission requirements and relevant courses",
+      "title": "3. Relevant courses",
       "description": "Add every passed course you want to use as evidence for the admission requirements. Add each course only once. On the following page, you will select which requirements each course supports.",
       "elements": [
         {
@@ -428,12 +428,13 @@
     {
       "name": "prerequisite_coverage_page",
       "title": "4. Prerequisite coverage",
-      "description": "For each prerequisite add applicable courses and select the topics they cover. If you have no relevant course for a prerequisite, continue to the next one. Each prerequisite can be supported by up to 3 relevant courses. A single course may be used as evidence for at most 3 prerequisites.",
+      "description": "Review the required topics listed under each subject, then add applicable courses as evidence. If you have no relevant course for a prerequisite, continue to the next one. Each prerequisite can be supported by up to 3 relevant courses. A single course may be used as evidence for at most 3 prerequisites.",
       "elements": [
         {
           "type": "panel",
           "name": "requirement_calculus",
           "title": "Calculus",
+          "description": "• Continuity\n• Closed, open, and bounded sets\n• Differentiation, integration\n• Distances, norms",
           "showNumber": true,
           "elements": [
             {
@@ -465,20 +466,6 @@
                   "choiceTextsFromQuestion": "course_label"
                 },
                 {
-                  "type": "checkbox",
-                  "name": "calculus_topics_covered",
-                  "valueName": "topics_covered",
-                  "title": "Topics covered by this course",
-                  "visibleIf": "{panel.course_ref} notempty",
-                  "isRequired": true,
-                  "choices": [
-                    "Continuity",
-                    "Closed, open, and bounded sets",
-                    "Differentiation, integration",
-                    "Distances, norms"
-                  ]
-                },
-                {
                   "type": "comment",
                   "name": "calculus_additional_explanation",
                   "valueName": "additional_explanation",
@@ -497,6 +484,7 @@
           "type": "panel",
           "name": "requirement_linear_algebra",
           "title": "Linear Algebra",
+          "description": "• Calculate with matrices and vectors\n• Solve linear systems with Gauss(-Jordan) elimination\n• Understand and apply rank, orthogonality, (in)dependency, eigenvalue decomposition and eigenvectors",
           "showNumber": true,
           "elements": [
             {
@@ -528,19 +516,6 @@
                   "choiceTextsFromQuestion": "course_label"
                 },
                 {
-                  "type": "checkbox",
-                  "name": "linear_algebra_topics_covered",
-                  "valueName": "topics_covered",
-                  "title": "Topics covered by this course",
-                  "visibleIf": "{panel.course_ref} notempty",
-                  "isRequired": true,
-                  "choices": [
-                    "Calculate with matrices and vectors",
-                    "Solve linear systems with Gauss(-Jordan) elimination",
-                    "Understand and apply rank, orthogonality, (in)dependency, eigenvalue decomposition and eigenvectors"
-                  ]
-                },
-                {
                   "type": "comment",
                   "name": "linear_algebra_additional_explanation",
                   "valueName": "additional_explanation",
@@ -559,6 +534,7 @@
           "type": "panel",
           "name": "requirement_probability_statistics",
           "title": "Probability and Statistics",
+          "description": "• Introductory probability theory (single-variable & multi-variable distributions, marginalization, conditioning, independence, Bayes' rule)\n• Knowledge of discrete and continuous random variables\n• Descriptive statistics including the theory and practice of confidence intervals, hypothesis testing and estimation theory",
           "showNumber": true,
           "elements": [
             {
@@ -590,19 +566,6 @@
                   "choiceTextsFromQuestion": "course_label"
                 },
                 {
-                  "type": "checkbox",
-                  "name": "probability_statistics_topics_covered",
-                  "valueName": "topics_covered",
-                  "title": "Topics covered by this course",
-                  "visibleIf": "{panel.course_ref} notempty",
-                  "isRequired": true,
-                  "choices": [
-                    "Introductory probability theory (single-variable & multi-variable distributions, marginalization, conditioning, independence, Bayes' rule)",
-                    "Knowledge of discrete and continuous random variables",
-                    "Descriptive statistics including the theory and practice of confidence intervals, hypothesis testing and estimation theory"
-                  ]
-                },
-                {
                   "type": "comment",
                   "name": "probability_statistics_additional_explanation",
                   "valueName": "additional_explanation",
@@ -621,6 +584,7 @@
           "type": "panel",
           "name": "requirement_discrete_mathematics",
           "title": "Discrete Mathematics",
+          "description": "• Propositional logic and predicate logic\n• Reason with logical formulas\n• Standard proving techniques such as induction, case distinction, contradiction\n• Set operations, functions, relations, orderings\n• Knowledge of basic graph structures (graphs, trees, and their properties)",
           "showNumber": true,
           "elements": [
             {
@@ -652,21 +616,6 @@
                   "choiceTextsFromQuestion": "course_label"
                 },
                 {
-                  "type": "checkbox",
-                  "name": "discrete_mathematics_topics_covered",
-                  "valueName": "topics_covered",
-                  "title": "Topics covered by this course",
-                  "visibleIf": "{panel.course_ref} notempty",
-                  "isRequired": true,
-                  "choices": [
-                    "Propositional logic and predicate logic",
-                    "Reason with logical formulas",
-                    "Standard proving techniques such as induction, case distinction, contradiction",
-                    "Set operations, functions, relations, orderings",
-                    "Knowledge of basic graph structures (graphs, trees, and their properties)"
-                  ]
-                },
-                {
                   "type": "comment",
                   "name": "discrete_mathematics_additional_explanation",
                   "valueName": "additional_explanation",
@@ -685,6 +634,7 @@
           "type": "panel",
           "name": "requirement_data_structures_algorithms",
           "title": "Data Structures and Algorithms",
+          "description": "• Use of standard data structures\n• Algorithm design techniques\n• Reason about algorithm complexity and efficiency",
           "showNumber": true,
           "elements": [
             {
@@ -716,19 +666,6 @@
                   "choiceTextsFromQuestion": "course_label"
                 },
                 {
-                  "type": "checkbox",
-                  "name": "data_structures_algorithms_topics_covered",
-                  "valueName": "topics_covered",
-                  "title": "Topics covered by this course",
-                  "visibleIf": "{panel.course_ref} notempty",
-                  "isRequired": true,
-                  "choices": [
-                    "Use of standard data structures",
-                    "Algorithm design techniques",
-                    "Reason about algorithm complexity and efficiency"
-                  ]
-                },
-                {
                   "type": "comment",
                   "name": "data_structures_algorithms_additional_explanation",
                   "valueName": "additional_explanation",
@@ -747,6 +684,7 @@
           "type": "panel",
           "name": "requirement_programming_software_development",
           "title": "Programming and Software Development",
+          "description": "• Write programs from scratch in imperative and object-oriented languages (not only scripts)\n• Use general algorithmic techniques (aggregation, searching, sorting, recursion)\n• Apply the principles of code quality and software engineering",
           "showNumber": true,
           "elements": [
             {
@@ -778,19 +716,6 @@
                   "choiceTextsFromQuestion": "course_label"
                 },
                 {
-                  "type": "checkbox",
-                  "name": "programming_software_development_topics_covered",
-                  "valueName": "topics_covered",
-                  "title": "Topics covered by this course",
-                  "visibleIf": "{panel.course_ref} notempty",
-                  "isRequired": true,
-                  "choices": [
-                    "Write programs from scratch in imperative and object-oriented languages (not only scripts)",
-                    "Use general algorithmic techniques (aggregation, searching, sorting, recursion)",
-                    "Apply the principles of code quality and software engineering"
-                  ]
-                },
-                {
                   "type": "comment",
                   "name": "programming_software_development_additional_explanation",
                   "valueName": "additional_explanation",
@@ -809,6 +734,7 @@
           "type": "panel",
           "name": "requirement_data_modeling_databases",
           "title": "Data Modeling and Databases",
+          "description": "• Design data models (E-R diagrams, UML) from natural language requirements\n• Query relational databases (SQL) based on natural language requirements",
           "showNumber": true,
           "elements": [
             {
@@ -840,18 +766,6 @@
                   "choiceTextsFromQuestion": "course_label"
                 },
                 {
-                  "type": "checkbox",
-                  "name": "data_modeling_databases_topics_covered",
-                  "valueName": "topics_covered",
-                  "title": "Topics covered by this course",
-                  "visibleIf": "{panel.course_ref} notempty",
-                  "isRequired": true,
-                  "choices": [
-                    "Design data models (E-R diagrams, UML) from natural language requirements",
-                    "Query relational databases (SQL) based on natural language requirements"
-                  ]
-                },
-                {
                   "type": "comment",
                   "name": "data_modeling_databases_additional_explanation",
                   "valueName": "additional_explanation",
@@ -870,6 +784,7 @@
           "type": "panel",
           "name": "requirement_machine_learning_data_mining",
           "title": "Machine Learning and Data Mining",
+          "description": "• Apply feature selection and extraction\n• Apply supervised learning (classification and regression)\n• Apply unsupervised learning (clustering and matrix factorization)\n• Apply evaluation methods and understand overfitting\n• Training machine learning models and making predictions",
           "showNumber": true,
           "elements": [
             {
@@ -901,21 +816,6 @@
                   "choiceTextsFromQuestion": "course_label"
                 },
                 {
-                  "type": "checkbox",
-                  "name": "machine_learning_data_mining_topics_covered",
-                  "valueName": "topics_covered",
-                  "title": "Topics covered by this course",
-                  "visibleIf": "{panel.course_ref} notempty",
-                  "isRequired": true,
-                  "choices": [
-                    "Apply feature selection and extraction",
-                    "Apply supervised learning (classification and regression)",
-                    "Apply unsupervised learning (clustering and matrix factorization)",
-                    "Apply evaluation methods and understand overfitting",
-                    "Training machine learning models and making predictions"
-                  ]
-                },
-                {
                   "type": "comment",
                   "name": "machine_learning_data_mining_additional_explanation",
                   "valueName": "additional_explanation",
@@ -936,7 +836,21 @@
       "name": "application_report",
       "title": "5. Report generation",
       "navigationTitle": "5. Report generation",
-      "elements": []
+      "description": "Please review the information you entered below. Highlighted items indicate possible oversights, such as courses that are not used as evidence or prerequisites for which no evidence has been provided. For long course descriptions, only a short preview is shown here. The full text will be included in the generated PDF.",
+      "elements": [
+        {
+          "type": "html",
+          "name": "application_report_upload_instruction",
+          "html": "<p class=\"report-upload-instruction\"><strong>Please download the report at the bottom of this page and upload it to OSIRIS.</strong></p>",
+          "showNumber": false
+        },
+        {
+          "type": "html",
+          "name": "application_report_content",
+          "html": "<div id=\"reportMount\"></div>",
+          "showNumber": false
+        }
+      ]
     }
   ]
 }

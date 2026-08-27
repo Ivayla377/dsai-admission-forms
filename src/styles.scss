@@ -164,6 +164,17 @@ select {
   white-space: pre-line;
 }
 
+// Requirement panels have no data-name attribute in SurveyJS. Identify them
+// by their evidence control so the fixed topic guidance remains easy to read.
+#surveyElement
+  .sd-panel:has([data-name^="evidence_"])
+  > .sd-panel__header
+  .sd-panel__description {
+  color: var(--ink);
+  font-size: 0.92rem;
+  line-height: 1.5;
+}
+
 // Keep the introduction in the same SurveyJS card language as the questions,
 // with a persistent accent that does not depend on focus or validation state.
 #surveyElement [data-name="form_instructions"] {
@@ -353,65 +364,296 @@ select {
 
 .report-page {
   min-width: 0;
-  overflow: hidden;
+  overflow: visible;
   border: 0;
   border-radius: 4px;
-  background: var(--paper);
-  box-shadow: var(--panel-shadow);
+  background: var(--page-bg);
+  box-shadow: none;
   font-family: inherit;
 }
 
 .report-page__content {
-  padding: 32px 40px 36px;
+  padding: 0;
 }
 
 .report-page__header {
+  min-width: 0;
   padding: 0;
 }
 
 .report-page__header h2 {
   margin: 0 0 6px;
-  font-size: 1.2rem;
+  font-size: 1.45rem;
   font-weight: 600;
-  line-height: 1.35;
+  line-height: 1.2;
 }
 
 .report-page__header p {
   margin: 0;
   color: var(--muted);
-  font-size: 1rem;
-  line-height: 1.5;
+  font-size: 0.92rem;
+  line-height: 1.45;
 }
 
-.report-page[data-state="error"] .report-page__header p {
+.report-page[data-state="error"] #completionStatus {
   color: var(--error);
 }
 
-.report-file {
+.report-review {
+  margin: 0;
+}
+
+#surveyElement .report-review__section,
+.report-download {
+  border: 0;
+  border-radius: 4px;
+  background: #ffffff;
+}
+
+#surveyElement [data-name="application_report_upload_instruction"] {
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+#surveyElement
+  .sd-row:has([data-name="application_report_upload_instruction"]) {
+  margin-top: 12px;
+}
+
+#surveyElement .sd-row:has([data-name="application_report_content"]) {
+  margin-top: 0;
+}
+
+.report-upload-instruction {
+  margin-bottom: 1rem;
+  color: var(--muted);
+  font-size: 0.88rem;
+  line-height: 1.45;
+}
+
+.report-upload-instruction strong {
+  color: var(--ink);
+  font-weight: 700;
+}
+
+.report-review__summary {
+  display: grid;
+  gap: 12px;
+}
+
+#surveyElement .report-review__section {
+  min-width: 0;
+  padding: 16px;
+}
+
+#surveyElement .report-review__section-title {
+  margin: 0 0 13px;
+  padding: 0 0 7px;
+  border-bottom: 1px solid var(--line);
+  color: var(--ink);
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+#surveyElement .report-review__subsection-title {
+  margin: 0 0 8px;
+  color: var(--ink);
+  font-size: 0.92rem;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.report-review__study + .report-review__study {
+  margin-top: 15px;
+  padding-top: 15px;
+  border-top: 1px solid var(--line);
+}
+
+.report-review__table-wrapper {
+  overflow-x: auto;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+}
+
+.report-review__table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.9rem;
+  line-height: 1.35;
+}
+
+.report-review__table th,
+.report-review__table td {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--line);
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  text-align: left;
+  vertical-align: top;
+}
+
+.report-review__table thead th {
+  background: #f6f6f6;
+  color: var(--ink);
+  font-size: 0.86rem;
+  font-weight: 600;
+}
+
+.report-review__table--coverage thead th:first-child,
+.report-review__table--coverage tbody th {
+  width: 39%;
+}
+
+.report-review__table.report-review__table--key-value tbody th {
+  width: 36%;
+  background: transparent;
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.report-review__table--courses {
+  min-width: 760px;
+}
+
+.report-review__table--courses thead th:first-child,
+.report-review__table--courses tbody th:first-child {
+  width: 12%;
+}
+
+.report-review__table--courses thead th:nth-child(2) {
+  width: 18%;
+}
+
+.report-review__table--courses thead th:nth-child(3) {
+  width: 20%;
+}
+
+.report-review__table--courses thead th:nth-child(4) {
+  width: 17%;
+}
+
+.report-review__table--courses thead th:nth-child(5) {
+  width: 9%;
+}
+
+.report-review__table--courses thead th:last-child {
+  width: 24%;
+}
+
+.report-review__table tbody th {
+  background: #fafafa;
+  font-weight: 600;
+}
+
+.report-review__table--courses tbody th {
+  background: #ffffff;
+}
+
+.report-review__table tbody tr:last-child > * {
+  border-bottom: 0;
+}
+
+.report-review__row--warning > th {
+  box-shadow: inset 3px 0 0 #c68a21;
+}
+
+.report-review__table--courses .report-review__course-row--unused > *,
+.report-review__table--courses .report-review__course-detail-row--unused > * {
+  background: #f1f1f1;
+}
+
+.report-review__course-row--separated > * {
+  border-top: 2px solid var(--line-strong);
+}
+
+.report-review__course-row--unused > th,
+.report-review__course-detail-row--unused > th {
+  color: #555555;
+  box-shadow: inset 3px 0 0 #8a8a8a;
+}
+
+.report-review__course-detail-row > th {
+  color: var(--ink);
+  font-size: 0.86rem;
+  font-weight: 600;
+}
+
+.report-review__course-detail-row > td {
+  white-space: pre-wrap;
+}
+
+.report-review__text-preview {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  white-space: pre-wrap;
+}
+
+.report-review__unused-status {
+  color: #4f4f4f;
+  font-size: 0.82rem;
+  font-weight: 800 !important;
+  line-height: 1.35;
+}
+
+.report-review__courses {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.report-review__courses li {
+  min-width: 0;
+}
+
+.report-review__courses li + li {
+  margin-top: 3px;
+}
+
+.report-review__evidence-course {
+  font-weight: 600;
+}
+
+.report-review__evidence-detail {
+  margin: 3px 0 0;
+  color: var(--muted);
+  font-size: 0.86rem;
+  line-height: 1.4;
+  white-space: pre-wrap;
+}
+
+.report-review__warning-text {
+  color: #825400;
+  font-weight: 600;
+}
+
+.report-review__success {
+  margin: 10px 0 0;
+  color: var(--guide-green);
+  font-size: 0.92rem;
+  font-weight: 600;
+}
+
+.report-download {
   display: flex;
   align-items: center;
-  gap: 10px;
-  margin: 24px 0 14px;
+  justify-content: space-between;
+  gap: 24px;
+  margin-top: 12px;
+  padding: 20px;
+  border-top: 3px solid var(--tue-red);
+}
+
+.report-page__header .report-download__academic-year {
+  margin: 0 0 8px;
   color: var(--muted);
-}
-
-.document-icon {
-  width: 19px;
-  height: 19px;
-  flex: 0 0 19px;
-  fill: none;
-  stroke: currentColor;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  stroke-width: 1.6;
-}
-
-.report-filename {
-  margin: 0;
-  color: inherit;
   font-size: 0.92rem;
-  font-weight: 400;
-  overflow-wrap: anywhere;
+  line-height: 1.35;
 }
 
 #surveyElement .primary-download,
@@ -425,6 +667,7 @@ select {
   align-items: center;
   justify-content: center;
   gap: 10px;
+  min-width: 260px;
   min-height: 48px;
   padding: 11px 20px;
   border: 1px solid var(--tue-red);
@@ -517,14 +760,21 @@ select {
   }
 
   .report-page__content {
-    padding: 24px 20px 28px;
+    padding: 0;
   }
 
   .report-page__header h2 {
-    font-size: 1.15rem;
+    font-size: 1.3rem;
+  }
+
+  .report-download {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 18px;
   }
 
   #surveyElement .primary-download {
+    min-width: 0;
     width: 100%;
   }
 }

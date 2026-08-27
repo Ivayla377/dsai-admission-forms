@@ -43,53 +43,57 @@
           aria-live="polite"
         >
           <div class="report-page__content">
-            <header class="report-page__header">
-              <h2 id="reportTitle">Creating your application PDF</h2>
-              <p id="completionStatus" role="status">
-                Please wait while the PDF and embedded Output JSON are
-                prepared.
-              </p>
-            </header>
-
-            <div class="report-file">
-              <svg
-                class="document-icon"
-                viewBox="0 0 24 24"
-                aria-hidden="true"
-              >
-                <path d="M6 3h8l4 4v14H6V3Z" />
-                <path d="M14 3v5h4M9 12h6M9 16h6" />
-              </svg>
-              <span id="pdfFilename" class="report-filename"></span>
-            </div>
-
-            <button
-              id="downloadPdf"
-              class="primary-download"
-              type="button"
-              disabled
+            <section
+              class="report-review"
+              aria-label="Review your information"
             >
-              <svg
-                class="download-icon"
-                viewBox="0 0 24 24"
-                aria-hidden="true"
-              >
-                <path d="M12 3v12m0 0 4-4m-4 4-4-4M5 17v3h14v-3" />
-              </svg>
-              Download application PDF
-            </button>
+              <div id="reportReviewSummary" class="report-review__summary">
+                Checking for likely omissions...
+              </div>
+            </section>
 
-            <!-- Debug-only standalone JSON download. To restore it, uncomment
-            this button and the matching downloadJson sections in src/main.js.
-            <button
-              id="downloadJson"
-              class="secondary-download"
-              type="button"
-              disabled
-            >
-              Download output JSON (optional, for your records)
-            </button>
-            -->
+            <section class="report-download" aria-labelledby="reportTitle">
+              <header class="report-page__header">
+                <p
+                  id="reportAcademicYear"
+                  class="report-download__academic-year"
+                ></p>
+                <h2 id="reportTitle">DS&amp;AI Additional Admissions Form</h2>
+                <p id="completionStatus" role="status">
+                  Please wait while the PDF and embedded Output JSON are
+                  prepared.
+                </p>
+              </header>
+
+              <button
+                id="downloadPdf"
+                class="primary-download"
+                type="button"
+                disabled
+              >
+                <svg
+                  class="download-icon"
+                  viewBox="0 0 24 24"
+                  aria-hidden="true"
+                >
+                  <path d="M12 3v12m0 0 4-4m-4 4-4-4M5 17v3h14v-3" />
+                </svg>
+                Download application PDF
+              </button>
+
+              <!-- Debug-only standalone JSON download. To restore it,
+              uncomment this button and the matching downloadJson sections in
+              src/main.js.
+              <button
+                id="downloadJson"
+                class="secondary-download"
+                type="button"
+                disabled
+              >
+                Download output JSON (optional, for your records)
+              </button>
+              -->
+            </section>
           </div>
         </section>
       </template>

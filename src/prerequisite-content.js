@@ -7,9 +7,11 @@ export function addPrerequisiteKnowledgeContent(model) {
   const requirements = getRequirementContent(model);
 
   for (const requirement of requirements) {
-    requirement.panel.description = requirement.topics
-      .map((topic) => `- ${topic}`)
-      .join("\n");
+    if (!String(requirement.panel.description ?? "").trim()) {
+      requirement.panel.description = requirement.topics
+        .map((topic) => `- ${topic}`)
+        .join("\n");
+    }
   }
 
   const overview = model.getQuestionByName(OVERVIEW_QUESTION_NAME);
@@ -22,6 +24,29 @@ export function addPrerequisiteKnowledgeContent(model) {
   overview.html = renderRequirementsOverview(requirements);
 }
 
+// 2025 stores topics as checkbox choices. The 2026 form has no topic answer
+// field and keeps the same fixed definitions as bullet lines in each subject's
+// description. This adapter lets both versions retain one JSON source of truth.
+export function getRequirementTopicDefinitions(panel) {
+  const evidence = panel?.elements?.find(
+    (element) => getElementType(element) === "paneldynamic",
+  );
+  const topicsQuestion = evidence?.templateElements?.find(
+    (element) => getQuestionValueName(element) === "topics_covered",
+  );
+
+  if (topicsQuestion) {
+    return (topicsQuestion.choices ?? []).map(normalizeTopicChoice);
+  }
+
+  return String(panel?.description ?? "")
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .map((line) => line.match(/^(?:-|\u2022)\s+(.+)$/)?.[1]?.trim() ?? "")
+    .filter(Boolean)
+    .map((topic) => ({ value: topic, text: topic }));
+}
+
 function getRequirementContent(model) {
   return model.pages
     .flatMap((page) => page.elements)
@@ -31,21 +56,37 @@ function getRequirementContent(model) {
         element.name.startsWith(REQUIREMENT_PREFIX),
     )
     .map((panel) => {
-      const evidence = panel.elements.find(
-        (element) => element.getType() === "paneldynamic",
-      );
-      const topics = evidence?.templateElements.find(
-        (element) => getQuestionValueName(element) === "topics_covered",
-      );
+      const topics = getRequirementTopicDefinitions(panel);
+
+      if (!topics.length) {
+        throw new Error(
+          `Requirement panel "${panel.name}" must define at least one topic.`,
+        );
+      }
 
       return {
         panel,
         title: panel.title,
-        topics: (topics?.choices ?? []).map(
-          (choice) => choice.text || String(choice.value),
-        ),
+        topics: topics.map((topic) => topic.text),
       };
     });
+}
+
+function getElementType(element) {
+  return typeof element?.getType === "function"
+    ? element.getType()
+    : element?.type;
+}
+
+function normalizeTopicChoice(choice) {
+  if (choice && typeof choice === "object") {
+    const value = String(choice.value ?? choice.text ?? "").trim();
+    const text = String(choice.text ?? choice.value ?? "").trim();
+    return { value, text };
+  }
+
+  const value = String(choice ?? "").trim();
+  return { value, text: value };
 }
 
 function renderRequirementsOverview(requirements) {

@@ -16,17 +16,18 @@ import {
 import {
   createAugmentedPdfBlob,
   downloadPdfBlob,
-  getPdfFilename,
 } from "./pdf.js";
 import { addPrerequisiteKnowledgeContent } from "./prerequisite-content.js";
 import {
   addPrerequisiteCourseUsageValidation,
   addPrerequisiteSubjectCourseChoiceAvailability,
 } from "./prerequisite-validation.js";
+import { renderReportReviewSummary } from "./report-summary.js";
 import "./styles.scss";
 
 const FORM_VERSION = __FORM_VERSION__;
 const REPORT_PAGE_NAME = "application_report";
+const REPORT_CONTENT_NAME = "application_report_content";
 const REPORT_MOUNT_ID = "reportMount";
 
 const surveyTheme = {
@@ -100,14 +101,29 @@ function createRuntimeFormDefinition(source) {
     );
   }
 
-  reportPage.elements = [
-    {
+  const reportContent = reportPage.elements.find(
+    (element) => element.name === REPORT_CONTENT_NAME,
+  );
+
+  if (reportContent) {
+    if (
+      reportContent.type !== "html" ||
+      !reportContent.html?.includes(`id="${REPORT_MOUNT_ID}"`)
+    ) {
+      throw new Error(
+        `The "${REPORT_CONTENT_NAME}" element must contain #${REPORT_MOUNT_ID}.`,
+      );
+    }
+  } else {
+    // Compatibility for older Form JSON versions that predate the report
+    // placeholder. New forms define its position declaratively.
+    reportPage.elements.push({
       type: "html",
-      name: "application_report_content",
+      name: REPORT_CONTENT_NAME,
       html: `<div id="${REPORT_MOUNT_ID}"></div>`,
       showNumber: false,
-    },
-  ];
+    });
+  }
 
   return runtimeDefinition;
 }
@@ -139,7 +155,7 @@ async function generateReport(model, generationId) {
       formDefinition,
       formVersion: FORM_VERSION,
     });
-    reportView.pdfFilename.textContent = getPdfFilename(preparedOutput);
+    renderReportReviewSummary(reportView.reviewSummary, preparedOutput);
     preparedPdfBlob = await createAugmentedPdfBlob(preparedOutput, {
       logoUrl: tueLogoUrl,
     });
@@ -152,7 +168,6 @@ async function generateReport(model, generationId) {
     }
 
     reportView.completionActions.dataset.state = "ready";
-    reportView.reportTitle.textContent = "Your application PDF is ready";
     reportView.completionStatus.textContent =
       "Download the PDF, review the information, and upload the same PDF to OSIRIS.";
     reportView.downloadPdfButton.disabled = false;
@@ -173,9 +188,9 @@ function mountReportView() {
 
   return {
     completionActions: requiredElement("completionActions"),
-    reportTitle: requiredElement("reportTitle"),
+    academicYear: requiredElement("reportAcademicYear"),
     completionStatus: requiredElement("completionStatus"),
-    pdfFilename: requiredElement("pdfFilename"),
+    reviewSummary: requiredElement("reportReviewSummary"),
     downloadPdfButton: requiredElement("downloadPdf"),
     // Debug-only standalone JSON download.
     // downloadJsonButton: requiredElement("downloadJson"),
@@ -184,11 +199,10 @@ function mountReportView() {
 
 function showPreparingState(reportView) {
   reportView.completionActions.dataset.state = "preparing";
-  reportView.reportTitle.textContent = "Creating your application PDF";
+  reportView.academicYear.textContent = `Academic year ${FORM_VERSION}`;
   reportView.completionStatus.textContent =
     "Please wait while the PDF and embedded Output JSON are prepared.";
-  reportView.pdfFilename.textContent =
-    `DSAI-additional-admissions-${FORM_VERSION}.pdf`;
+  reportView.reviewSummary.textContent = "Checking for likely omissions...";
   reportView.downloadPdfButton.disabled = true;
   // Debug-only standalone JSON download.
   // reportView.downloadJsonButton.disabled = true;
@@ -196,11 +210,14 @@ function showPreparingState(reportView) {
 
 function showGenerationError(reportView, error) {
   reportView.completionActions.dataset.state = "error";
-  reportView.reportTitle.textContent =
-    "Your application PDF could not be created";
   reportView.downloadPdfButton.disabled = true;
   // Debug-only standalone JSON download.
   // reportView.downloadJsonButton.disabled = !preparedOutput;
+
+  if (!preparedOutput) {
+    reportView.reviewSummary.textContent =
+      "The review summary could not be prepared.";
+  }
 
   if (error instanceof OutputValidationError) {
     reportView.completionStatus.textContent = error.message;

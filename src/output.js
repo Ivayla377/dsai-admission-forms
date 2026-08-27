@@ -3,6 +3,7 @@ import addFormats from "ajv-formats";
 
 import outputSchema from "../schemas/output-v1.schema.json" with { type: "json" };
 import { convertCourseCreditsToEC } from "./credit-conversion.js";
+import { getRequirementTopicDefinitions } from "./prerequisite-content.js";
 import { MAX_PREREQUISITE_USES_PER_COURSE } from "./prerequisite-validation.js";
 import { getQuestionValueName } from "./surveyjs-question-utils.js";
 
@@ -308,14 +309,18 @@ function normalizePrerequisiteCoverage({
           `${path}.courseEvidence[${evidenceIndex}].courseReference`,
           warnings,
         ),
-        topicsCovered: asArray(evidence.topics_covered).map(
-          (topic, topicIndex) =>
-            normalizeText(
-              topic,
-              `${path}.courseEvidence[${evidenceIndex}].topicsCovered[${topicIndex}]`,
-              warnings,
-            ),
-        ),
+        ...(requirement.capturesTopicCoverage
+          ? {
+              topicsCovered: asArray(evidence.topics_covered).map(
+                (topic, topicIndex) =>
+                  normalizeText(
+                    topic,
+                    `${path}.courseEvidence[${evidenceIndex}].topicsCovered[${topicIndex}]`,
+                    warnings,
+                  ),
+              ),
+            }
+          : {}),
         additionalExplanation: normalizeOptionalText(
           evidence.additional_explanation,
           `${path}.courseEvidence[${evidenceIndex}].additionalExplanation`,
@@ -384,6 +389,15 @@ function extractRequirementDefinition(requirementPanel) {
   const topicsQuestion = asArray(evidenceQuestion.templateElements).find(
     (element) => getQuestionValueName(element) === "topics_covered",
   );
+  const topics = getRequirementTopicDefinitions(requirementPanel).map(
+    (topic) => topic.value,
+  );
+
+  if (!topics.length) {
+    throw new OutputValidationError(
+      `Requirement panel "${requirementPanel.name}" must define at least one topic.`,
+    );
+  }
 
   return {
     requirementReference: stripNameAffixes(
@@ -393,15 +407,9 @@ function extractRequirementDefinition(requirementPanel) {
     requirementTitle: requirementPanel.title,
     evidenceQuestionName: evidenceQuestion.name,
     maxCourseEvidence: evidenceQuestion.maxPanelCount,
-    topics: asArray(topicsQuestion?.choices).map(getChoiceValue),
+    topics,
+    capturesTopicCoverage: Boolean(topicsQuestion),
   };
-}
-
-function getChoiceValue(choice) {
-  if (choice && typeof choice === "object") {
-    return String(choice.value ?? choice.text ?? "").trim();
-  }
-  return String(choice ?? "").trim();
 }
 
 function stripNameAffixes(value, prefix, suffix = "") {
@@ -461,13 +469,17 @@ function assertCoverageReferences(prerequisiteCoverage, courses) {
         );
       }
 
-      if (availableTopics.size > 0 && evidence.topicsCovered.length === 0) {
+      if (
+        Object.hasOwn(evidence, "topicsCovered") &&
+        availableTopics.size > 0 &&
+        evidence.topicsCovered.length === 0
+      ) {
         throw new OutputValidationError(
           `Select at least one topic for "${requirement.requirementTitle}" and course "${evidence.courseReference}".`,
         );
       }
 
-      for (const topic of evidence.topicsCovered) {
+      for (const topic of evidence.topicsCovered ?? []) {
         if (!availableTopics.has(topic)) {
           throw new OutputValidationError(
             `Topic "${topic}" is not defined for "${requirement.requirementTitle}".`,
