@@ -240,7 +240,6 @@ function createCoursesTable(document, courses) {
     "Degree",
     "Credits",
     "Grade",
-    "Used for",
   ]) {
     const header = createTextElement(document, "th", headerText);
     header.scope = "col";
@@ -268,8 +267,20 @@ function createCoursesTable(document, courses) {
     );
     courseRow.appendChild(createTextElement(document, "td", course.credits));
     courseRow.appendChild(createTextElement(document, "td", course.grade));
+    tableBody.appendChild(courseRow);
 
+    const useRow = document.createElement("tr");
+    useRow.className = [
+      "report-review__course-detail-row",
+      "report-review__course-usage-row",
+      course.isUnused ? "report-review__course-detail-row--unused" : "",
+    ]
+      .filter(Boolean)
+      .join(" ");
+    const useLabel = createTextElement(document, "th", "Used for");
+    useLabel.scope = "row";
     const useCell = document.createElement("td");
+    useCell.colSpan = 4;
     if (course.isUnused) {
       useCell.appendChild(
         createTextElement(
@@ -282,8 +293,8 @@ function createCoursesTable(document, courses) {
     } else {
       useCell.appendChild(createCourseList(document, course.usedFor));
     }
-    courseRow.appendChild(useCell);
-    tableBody.appendChild(courseRow);
+    useRow.appendChild(useLabel);
+    useRow.appendChild(useCell);
 
     const descriptionRow = document.createElement("tr");
     descriptionRow.className = course.isUnused
@@ -304,10 +315,11 @@ function createCoursesTable(document, courses) {
       ),
       "report-review__text-preview",
     );
-    description.colSpan = 5;
+    description.colSpan = 4;
     descriptionRow.appendChild(descriptionLabel);
     descriptionRow.appendChild(description);
     tableBody.appendChild(descriptionRow);
+    tableBody.appendChild(useRow);
   }
   table.appendChild(tableBody);
   return wrapTable(document, table);
