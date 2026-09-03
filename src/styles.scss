@@ -160,6 +160,59 @@ select {
   line-height: 1.45;
 }
 
+// SurveyJS renders this native title action directly beside the question text.
+#surveyElement
+  .sv-title-actions
+  .sd-action-title-bar:has(.question-info-tooltip) {
+  flex: 0 0 auto;
+  margin-inline-start: 0;
+}
+
+#surveyElement .question-info-tooltip {
+  position: relative;
+  inset-inline-start: -22px;
+  top: 7px;
+}
+
+#surveyElement .question-info-tooltip .sv-action-bar-item {
+  width: 28px;
+  height: 28px;
+  justify-content: center;
+  margin: 0;
+  padding: 5px;
+  border-radius: 50%;
+}
+
+#surveyElement
+  .question-info-tooltip
+  .sv-action-bar-item__icon
+  use {
+  fill: var(--muted);
+}
+
+.question-info-tooltip-popup > .sv-popup__container {
+  width: min(340px, calc(100vw - 24px));
+  max-width: min(340px, calc(100vw - 24px));
+  box-sizing: border-box;
+}
+
+.question-info-tooltip-popup
+  > .sv-popup__container
+  > .sv-popup__body-content {
+  height: auto;
+  padding: 12px 14px;
+}
+
+.question-info-tooltip-popup .sv-string-viewer {
+  color: var(--ink);
+  font-family: "Noto Sans", "Open Sans", "Segoe UI", Arial, sans-serif;
+  font-size: 0.84rem;
+  font-weight: 400;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
 #surveyElement .sd-panel__description {
   white-space: pre-line;
 }

@@ -22,6 +22,10 @@ import {
   addPrerequisiteCourseUsageValidation,
   addPrerequisiteSubjectCourseChoiceAvailability,
 } from "./prerequisite-validation.js";
+import {
+  addCourseDescriptionFormatting,
+  addQuestionInfoTooltips,
+} from "./question-help.js";
 import { renderReportReviewSummary } from "./report-summary.js";
 import "./styles.scss";
 
@@ -49,8 +53,10 @@ survey.focusFirstQuestionAutomatic = false;
 survey.showCompleteButton = false;
 addPrerequisiteKnowledgeContent(survey);
 addPrerequisiteCourseUsageValidation(survey);
+addQuestionInfoTooltips(survey);
 if (FORM_VERSION === "2026-2027") {
   addPrerequisiteSubjectCourseChoiceAvailability(survey);
+  addCourseDescriptionFormatting(survey);
 }
 
 const reportTemplate = requiredElement("reportPageTemplate");
