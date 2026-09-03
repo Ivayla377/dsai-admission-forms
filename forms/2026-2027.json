@@ -292,7 +292,7 @@
           "type": "panel",
           "name": "admission_requirements_reference",
           "title": "Admission requirements",
-          "description": "Review the prerequisite subjects and topics before adding your relevant courses.\n\nFor each of these subjects, you should provide evidence of about 5 EC in coursework on that subject. (One full year of study corresponds to 60 EC.) The topics listed must be present in that coursework, next to possibly other topics. Evidence is provided by referring to one or more of your courses and if the topics are not readily visible in the course descriptions, add a short note explaining why they are covered (if they are).",
+          "description": "Review the prerequisite subjects and topics before adding your relevant courses.\n\nFor each of these subjects, you should provide evidence of about <abbr class=\"inline-info-tooltip\" title=\"EC refers to credits in the European Credit Transfer and Accumulation System (ECTS). 60 EC is one full-time academic year. Use this equivalence to estimate the corresponding workload if your institution uses a different credit system.\">5 EC</abbr> in coursework on that subject. (One full year of study corresponds to 60 EC). The topics listed must be present in that coursework, next to possibly other topics. Evidence is provided by referring to one or more of your courses and if the topics are not readily visible in the course descriptions, add a short note explaining why they are covered (if they are).",
           "showNumber": false,
           "state": "expanded",
           "elements": [

@@ -23,8 +23,8 @@ import {
   addPrerequisiteSubjectCourseChoiceAvailability,
 } from "./prerequisite-validation.js";
 import {
-  addCourseDescriptionFormatting,
   addQuestionInfoTooltips,
+  addTrustedDescriptionFormatting,
 } from "./question-help.js";
 import { renderReportReviewSummary } from "./report-summary.js";
 import "./styles.scss";
@@ -56,7 +56,7 @@ addPrerequisiteCourseUsageValidation(survey);
 addQuestionInfoTooltips(survey);
 if (FORM_VERSION === "2026-2027") {
   addPrerequisiteSubjectCourseChoiceAvailability(survey);
-  addCourseDescriptionFormatting(survey);
+  addTrustedDescriptionFormatting(survey);
 }
 
 const reportTemplate = requiredElement("reportPageTemplate");

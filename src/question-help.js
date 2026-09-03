@@ -7,8 +7,10 @@ import {
 
 const INFO_TOOLTIP_PROPERTY = "infoTooltip";
 const QUESTION_INFO_ICON = "question-info-16x16";
-const OFFICIAL_COURSE_DESCRIPTION_QUESTION_NAME =
-  "official_course_description";
+const TRUSTED_HTML_DESCRIPTION_ELEMENT_NAMES = new Set([
+  "admission_requirements_reference",
+  "official_course_description",
+]);
 
 if (!Serializer.findProperty("question", INFO_TOOLTIP_PROPERTY)) {
   Serializer.addProperty("question", {
@@ -22,13 +24,13 @@ SvgRegistry.registerIcons({
     '<svg viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M8 1.25a6.75 6.75 0 1 0 0 13.5A6.75 6.75 0 0 0 8 1.25ZM2.75 8a5.25 5.25 0 1 1 10.5 0 5.25 5.25 0 0 1-10.5 0ZM8 4.25a.875.875 0 1 0 0 1.75.875.875 0 0 0 0-1.75ZM7.25 7h1.5v4.75h-1.5V7Z" clip-rule="evenodd"/></svg>',
 });
 
-export function addCourseDescriptionFormatting(survey) {
+export function addTrustedDescriptionFormatting(survey) {
   survey.onTextMarkdown.add((_sender, options) => {
     if (
-      options.element.name === OFFICIAL_COURSE_DESCRIPTION_QUESTION_NAME &&
-      options.name === "description"
+      options.name === "description" &&
+      TRUSTED_HTML_DESCRIPTION_ELEMENT_NAMES.has(options.element.name)
     ) {
-      // This description is trusted, static Form JSON—not applicant input.
+      // These descriptions are trusted, static Form JSON - not applicant input.
       options.html = options.text;
     }
   });
