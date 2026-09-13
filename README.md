@@ -54,8 +54,10 @@ It contains SurveyJS, pdfmake, fonts, styles, the active Form JSON, the Output J
 - `schemas/output-v1.schema.json` is the source of truth for the normalized,
   machine-readable Output JSON format.
 - `index.html` defines the application shell and the final Report page markup.
-- `src/main.js` initializes SurveyJS, populates the final Report page with its
-  runtime content, and controls report generation and downloads.
+- `src/survey-model.js` creates the questionnaire from Form JSON and connects
+  its validation and help behavior.
+- `src/main.js` displays the questionnaire and handles page navigation,
+  report generation and downloads.
 - `src/styles.scss` contains the shared form and Report page styling.
 - `src/output.js` converts SurveyJS answers into validated Output JSON.
 - `src/credit-conversion.js` contains the documented course-credit-to-EC

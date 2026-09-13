@@ -34,6 +34,15 @@ export function addTrustedDescriptionFormatting(survey) {
       options.html = options.text;
     }
   });
+
+  survey.onAfterRenderPanel.add((_sender, options) => {
+    for (const help of options.htmlElement.querySelectorAll(".inline-info")) {
+      // Descriptions sit inside collapsible panel headers. Using their help
+      // must not also toggle the surrounding panel.
+      help.onclick = (event) => event.stopPropagation();
+      help.onkeydown = (event) => event.stopPropagation();
+    }
+  });
 }
 
 export function addQuestionInfoTooltips(survey) {

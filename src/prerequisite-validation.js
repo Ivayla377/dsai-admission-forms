@@ -58,7 +58,7 @@ export function addPrerequisiteCourseUsageValidation(survey) {
     }
   });
 
-  survey.onPanelRemoved.add((sender) => {
+  survey.onDynamicPanelRemoved.add((sender) => {
     revalidateSelectedPrerequisiteCourses(sender);
   });
 }

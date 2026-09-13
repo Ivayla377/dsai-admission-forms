@@ -24,9 +24,7 @@ export function addPrerequisiteKnowledgeContent(model) {
   overview.html = renderRequirementsOverview(requirements);
 }
 
-// 2025 stores topics as checkbox choices. The 2026 form has no topic answer
-// field and keeps the same fixed definitions as bullet lines in each subject's
-// description. This adapter lets both versions retain one JSON source of truth.
+
 export function getRequirementTopicDefinitions(panel) {
   const evidence = panel?.elements?.find(
     (element) => getElementType(element) === "paneldynamic",

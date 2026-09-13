@@ -62,8 +62,8 @@ export function buildPdfDefinition(output, { logoUrl = "" } = {}) {
         text: "2. Previous studies",
         style: "sectionHeading",
       },
-      ...output.previousStudies.flatMap((study) =>
-        buildPreviousStudySection(study),
+      ...output.previousStudies.flatMap((study, index) =>
+        buildPreviousStudySection(study, index + 1),
       ),
       ...buildPrerequisiteCoverage(output),
       ...buildUnusedCoursesWarning(output),
@@ -209,7 +209,7 @@ function buildReportHeading(output, logoUrl) {
   };
 }
 
-function buildPreviousStudySection(study) {
+function buildPreviousStudySection(study, degreeNumber) {
   const details = [
     ["Degree programme", study.degreeProgrammeName],
     ["Graduation date", formatDate(study.graduationDate)],
@@ -240,7 +240,10 @@ function buildPreviousStudySection(study) {
     ]);
   }
 
-  return [detailsTable(details)];
+  return [
+    { text: `Degree ${degreeNumber}`, style: "requirementHeading" },
+    detailsTable(details),
+  ];
 }
 
 function formatCourseGrade(course) {
@@ -444,17 +447,23 @@ function buildRequirementSection(
 ) {
   const content = [
     {
-      text: `3.${requirementNumber} ${requirement.requirementTitle}`,
-      style: "requirementHeading",
-    },
-    {
-      text: "Required topics",
-      style: "tableLabel",
-      margin: [0, 0, 0, 3],
-    },
-    {
-      ul: requirement.topics,
-      margin: [12, 0, 0, 7],
+      // Keep the subject heading and all required topics on the same page.
+      unbreakable: true,
+      stack: [
+        {
+          text: `3.${requirementNumber} ${requirement.requirementTitle}`,
+          style: "requirementHeading",
+        },
+        {
+          text: "Required topics",
+          style: "tableLabel",
+          margin: [0, 0, 0, 3],
+        },
+        {
+          ul: requirement.topics,
+          margin: [12, 0, 0, 7],
+        },
+      ],
     },
     {
       text: "Evidence",
@@ -529,35 +538,33 @@ function buildCourseEvidenceTable({
   alsoUsedFor,
 }) {
   const body = [
-    ["Course code", "Course title", "EC", "Grade"].map((label) => ({
+    ["Degree", "Course code", "Course title", "EC", "Grade"].map((label) => ({
       text: label,
       style: "tableLabel",
       fillColor: "#f4f4f4",
     })),
     [
+      toTableCell(String(degreeNumber)),
       toTableCell(course.courseCode),
       toTableCell(course.courseTitle),
       toTableCell(formatEC(convertCourseToEC(course, study))),
       toTableCell(formatCourseGrade(course)),
     ],
-    mergedEvidenceRow(
-      "Degree",
-      `Degree ${degreeNumber}: ${study.degreeProgrammeName} (${study.universityName})`,
-    ),
+    mergedEvidenceRow("Also used for", alsoUsedFor),
     mergedEvidenceRow(
       "Official course description",
       course.officialDescription,
     ),
     mergedEvidenceRow("Additional explanation", additionalExplanation),
-    mergedEvidenceRow("Also used for", alsoUsedFor),
   ];
 
-  return standardTable([105, "*", 40, 48], body);
+  return standardTable([35, 56, "*", 40, 48], body);
 }
 
 function mergedEvidenceRow(label, value) {
   return [
-    { text: label, style: "tableLabel", fillColor: "#f4f4f4" },
+    { text: label, style: "tableLabel", fillColor: "#f4f4f4", colSpan: 2 },
+    {},
     { text: addPdfSoftBreaks(pdfDisplayValue(value)), colSpan: 3 },
     {},
     {},

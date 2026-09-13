@@ -1,4 +1,3 @@
-import { Model } from "survey-core";
 import { DefaultLight } from "survey-core/themes";
 import "survey-core/survey-core.min.css";
 import "survey-js-ui";
@@ -17,21 +16,12 @@ import {
   createAugmentedPdfBlob,
   downloadPdfBlob,
 } from "./pdf.js";
-import { addPrerequisiteKnowledgeContent } from "./prerequisite-content.js";
-import {
-  addPrerequisiteCourseUsageValidation,
-  addPrerequisiteSubjectCourseChoiceAvailability,
-} from "./prerequisite-validation.js";
-import {
-  addQuestionInfoTooltips,
-  addTrustedDescriptionFormatting,
-} from "./question-help.js";
 import { renderReportReviewSummary } from "./report-summary.js";
+import { createConfiguredSurvey } from "./survey-model.js";
 import "./styles.scss";
 
 const FORM_VERSION = __FORM_VERSION__;
 const REPORT_PAGE_NAME = "application_report";
-const REPORT_CONTENT_NAME = "application_report_content";
 const REPORT_MOUNT_ID = "reportMount";
 
 const surveyTheme = {
@@ -47,17 +37,10 @@ const surveyTheme = {
   },
 };
 
-const survey = new Model(createRuntimeFormDefinition(formDefinition));
-survey.applyTheme(surveyTheme);
-survey.focusFirstQuestionAutomatic = false;
-survey.showCompleteButton = false;
-addPrerequisiteKnowledgeContent(survey);
-addPrerequisiteCourseUsageValidation(survey);
-addQuestionInfoTooltips(survey);
-if (FORM_VERSION === "2026-2027") {
-  addPrerequisiteSubjectCourseChoiceAvailability(survey);
-  addTrustedDescriptionFormatting(survey);
-}
+const survey = createConfiguredSurvey(formDefinition, {
+  formVersion: FORM_VERSION,
+  theme: surveyTheme,
+});
 
 const reportTemplate = requiredElement("reportPageTemplate");
 
@@ -94,45 +77,6 @@ document.addEventListener("click", (event) => {
 });
 
 survey.render(requiredElement("surveyElement"));
-
-function createRuntimeFormDefinition(source) {
-  const runtimeDefinition = cloneJson(source);
-  const reportPage = runtimeDefinition.pages.find(
-    (page) => page.name === REPORT_PAGE_NAME,
-  );
-
-  if (!reportPage) {
-    throw new Error(
-      `The Form JSON must define the final "${REPORT_PAGE_NAME}" page.`,
-    );
-  }
-
-  const reportContent = reportPage.elements.find(
-    (element) => element.name === REPORT_CONTENT_NAME,
-  );
-
-  if (reportContent) {
-    if (
-      reportContent.type !== "html" ||
-      !reportContent.html?.includes(`id="${REPORT_MOUNT_ID}"`)
-    ) {
-      throw new Error(
-        `The "${REPORT_CONTENT_NAME}" element must contain #${REPORT_MOUNT_ID}.`,
-      );
-    }
-  } else {
-    // Compatibility for older Form JSON versions that predate the report
-    // placeholder. New forms define its position declaratively.
-    reportPage.elements.push({
-      type: "html",
-      name: REPORT_CONTENT_NAME,
-      html: `<div id="${REPORT_MOUNT_ID}"></div>`,
-      showNumber: false,
-    });
-  }
-
-  return runtimeDefinition;
-}
 
 function scheduleReportGeneration(model) {
   const generationId = ++reportGenerationId;
@@ -175,7 +119,7 @@ async function generateReport(model, generationId) {
 
     reportView.completionActions.dataset.state = "ready";
     reportView.completionStatus.textContent =
-      "Download the PDF, review the information, and upload the same PDF to OSIRIS.";
+      "Download the PDF and review the information.";
     reportView.downloadPdfButton.disabled = false;
     // Debug-only standalone JSON download.
     // reportView.downloadJsonButton.disabled = false;
@@ -273,11 +217,4 @@ function requiredElement(id) {
     throw new Error(`Required page element was not found: #${id}`);
   }
   return element;
-}
-
-function cloneJson(value) {
-  if (typeof structuredClone === "function") {
-    return structuredClone(value);
-  }
-  return JSON.parse(JSON.stringify(value));
 }

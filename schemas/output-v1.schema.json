@@ -65,7 +65,7 @@
       "if": {
         "properties": {
           "formVersion": {
-            "const": "2026-2027"
+            "enum": ["2025-2026", "2026-2027"]
           }
         },
         "required": ["formVersion"]
@@ -134,57 +134,6 @@
                     "not": {
                       "required": ["topicsCovered"]
                     }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    {
-      "if": {
-        "properties": {
-          "formVersion": {
-            "const": "2025-2026"
-          }
-        },
-        "required": ["formVersion"]
-      },
-      "then": {
-        "properties": {
-          "previousStudies": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "required": ["creditSystemOther"]
-            }
-          },
-          "courses": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "not": {
-                "required": ["isPassFail"]
-              },
-              "properties": {
-                "finalGrade": {
-                  "type": "string",
-                  "minLength": 1
-                }
-              }
-            }
-          },
-          "prerequisiteCoverage": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "properties": {
-                "courseEvidence": {
-                  "type": "array",
-                  "items": {
-                    "type": "object",
-                    "required": ["topicsCovered"]
                   }
                 }
               }
