@@ -161,6 +161,26 @@ select {
   line-height: 1.45;
 }
 
+#surveyElement .page-instructions {
+  color: #111111;
+  font-size: 1rem;
+  line-height: 1.5;
+  white-space: normal;
+}
+
+#surveyElement .page-instructions p {
+  margin: 0 0 0.75rem;
+}
+
+#surveyElement .page-instructions ul {
+  margin: 0;
+  padding-inline-start: 1.5rem;
+}
+
+#surveyElement .page-instructions li + li {
+  margin-top: 0.25rem;
+}
+
 // SurveyJS renders this native title action directly beside the question text.
 #surveyElement
   .sv-title-actions
@@ -362,8 +382,22 @@ select {
   border-radius: 4px;
 }
 
-// Make the generated "Passed" value visibly read-only without muting other
-// conditionally disabled fields in the form.
+// Visibly mute course details while their JSON enableIf condition is false.
+// The confirmation remains active, and the fields keep their layout.
+#surveyElement
+  :is([data-name="is_pass_fail"], [data-name="final_grade"],
+      [data-name="course_credits"], [data-name="official_course_description"])
+  :is(.sd-input--readonly, .sd-boolean--disabled) {
+  background-color: #e8e8e8;
+  cursor: not-allowed;
+}
+
+#surveyElement
+  :is([data-name="is_pass_fail"], [data-name="final_grade"],
+      [data-name="course_credits"], [data-name="official_course_description"]):is(.sd-question--readonly, .sd-question--disabled) {
+  opacity: 0.65;
+}
+
 #surveyElement [data-name="final_grade"] .sd-input--readonly {
   color: var(--muted);
   -webkit-text-fill-color: var(--muted);

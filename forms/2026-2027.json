@@ -18,7 +18,7 @@
         {
           "type": "html",
           "name": "form_instructions",
-          "html": "<div class=\"form-instructions\"><p>This additional form helps the admissions committee determine how your previous studies meet the specific admission requirements for MSc Data Science and Artificial Intelligence.</p><p>Complete the form as follows:</p><ol><li><strong>Applicant details</strong> - enter your personal information as it appears in your application.</li><li><strong>Previous studies</strong> - provide information about the degree(s) relevant to your application.</li><li><strong>Relevant courses</strong> - review the listed prerequisite subjects and topics, then add the passed courses you want to use as evidence.</li><li><strong>Prerequisite coverage</strong> - indicate which of your relevant courses provide evidence for each prerequisite subject.</li><li><strong>Report generation</strong> - generate and review the PDF report.</li></ol><p>Complete all sections in English. If an official English translation of your academic documents was submitted with your application, use that version when completing this form. Before you begin, have your transcript(s) and official course descriptions ready. The form does not support intermediate saving, and your input may be lost if you close the browser.</p><p>After completing the form, generate and review the PDF report, then <strong class=\"draft-wording\">upload this PDF to OSIRIS. (Draft wording: to be confirmed.)</strong></p></div>",
+          "html": "<div class=\"form-instructions\"><p>This additional form helps the admissions committee determine how your previous studies meet the specific admission requirements for MSc Data Science and Artificial Intelligence.</p><p>Complete the form as follows:</p><ol><li><strong>Applicant details</strong> - enter your personal information as it appears in your application.</li><li><strong>Previous studies</strong> - provide information about the degree(s) relevant to your application.</li><li><strong>Relevant courses</strong> - review the listed prerequisite subjects and topics, then add the passed courses you want to use as evidence.</li><li><strong>Prerequisite coverage</strong> - indicate which of your relevant courses provide evidence for each prerequisite subject.</li><li><strong>Report generation</strong> - generate and review the PDF report.</li></ol><p>Complete all sections in English. If an official English translation of your academic documents was submitted with your application, use that version when completing this form. Before you begin, have your transcript(s) and official course descriptions ready. The form does not support intermediate saving, and your input may be lost if you close the browser.</p><p>After completing the form, generate and review the PDF report, then <strong class=\"draft-wording\">upload this PDF to OSIRIS. (Draft wording: to be confirmed.)</strong></p><p>False statements on this form can lead to invalidating an admission decision.</p></div>",
           "showNumber": false
         },
         {
@@ -286,7 +286,7 @@
     {
       "name": "relevant_courses_page",
       "title": "3. Relevant courses",
-      "description": "Add every passed course you want to use as evidence for the admission requirements. Add each course only once. On the following page, you will select which requirements each course supports.",
+      "description": "<div class=\"page-instructions\"><p>Add every passed course you want to use as evidence for the admission requirements. (To count as evidence, you must have obtained credits as part of a degree program, so non-degree professional experience and online courses cannot be used.) Add each course only once. On the following page, you will select which requirements each course supports.</p></div>",
       "elements": [
         {
           "type": "panel",
@@ -328,7 +328,7 @@
               "name": "relevant_course_degree_ref",
               "valueName": "degree_ref",
               "title": "Degree",
-              "description": "Select the degree that contains this course.",
+              "description": "Select the degree that contains this course. (Also exchange courses part of a degree should be linked to that degree. In that case add a note to the course description saying that it is an exchange course and mention the university the course was taken at.)",
               "placeholder": "Select a degree",
               "isRequired": true,
               "choicesFromQuestion": "previous_studies",
@@ -359,12 +359,31 @@
             },
             {
               "type": "boolean",
+              "name": "has_passed",
+              "isRequired": true,
+              "title": "I have passed this course",
+              "titleLocation": "hidden",
+              "renderAs": "checkbox",
+              "defaultValue": false,
+              "width": "50%",
+              "validators": [
+                {
+                  "type": "expression",
+                  "expression": "{panel.has_passed} = true",
+                  "text": "Only passed courses can be used as evidence. Confirm that you have passed this course or remove it."
+                }
+              ]
+            },
+            {
+              "type": "boolean",
               "name": "is_pass_fail",
               "title": "This course is Pass/Fail",
               "titleLocation": "hidden",
               "renderAs": "checkbox",
               "defaultValue": false,
-              "width": "50%"
+              "width": "45%",
+              "startWithNewLine": false,
+              "enableIf": "{panel.has_passed} = true"
             },
             {
               "type": "text",
@@ -372,7 +391,7 @@
               "title": "Final grade",
               "description": "Enter the final grade exactly as shown in the official academic document used to complete this form; do not convert it.",
               "placeholder": "For example, 8.5 or A",
-              "enableIf": "{panel.is_pass_fail} != true",
+              "enableIf": "{panel.has_passed} = true and {panel.is_pass_fail} != true",
               "requiredIf": "{panel.is_pass_fail} != true",
               "setValueIf": "{panel.is_pass_fail} = true",
               "setValueExpression": "'Passed'",
@@ -395,18 +414,20 @@
               "placeholder": "For example, 5",
               "isRequired": true,
               "width": "45%",
-              "startWithNewLine": false
+              "startWithNewLine": false,
+              "enableIf": "{panel.has_passed} = true"
             },
             {
               "type": "comment",
               "name": "official_course_description",
               "title": "Official course description",
-              "description": "Please copy the <strong>complete official course description in English</strong>, as this appears in the university study guide or course catalogue. If the official course description is not in English, instead include an accurate English translation. Include the references for used textbooks, and, when publicly accessible, the link to the official course page or catalogue.",
+              "description": "Please copy the <strong>complete official course description in English</strong>, as this appears in the university study guide or course catalogue. If the official course description is not in English, instead include an accurate English translation. Include the references for used textbooks, and, when publicly accessible, the link to the official course page or catalogue (but <strong>a link by itself is not enough</strong>).",
               "isRequired": true,
               "autoGrow": true,
               "rows": 6,
               "maxLength": 20000,
-              "width": "100%"
+              "width": "100%",
+              "enableIf": "{panel.has_passed} = true"
             },
             {
               "type": "expression",
@@ -429,7 +450,7 @@
     {
       "name": "prerequisite_coverage_page",
       "title": "4. Prerequisite coverage",
-      "description": "Review the required topics listed under each subject, then add applicable courses as evidence. If you have no relevant course for a prerequisite, continue to the next one. Each prerequisite can be supported by up to 3 relevant courses. A single course may be used as evidence for at most 3 prerequisites.",
+      "description": "<div class=\"page-instructions\"><p>Review the required topics listed under each subject, then add applicable courses as evidence. If you have no relevant course for a prerequisite, continue to the next one.</p><p>The following restrictions apply:</p><ul><li>Each prerequisite can be supported by up to 3 relevant courses.</li><li>A single course may be used as evidence for at most 3 prerequisites.</li></ul></div>",
       "elements": [
         {
           "type": "panel",
@@ -471,7 +492,7 @@
                   "name": "calculus_additional_explanation",
                   "valueName": "additional_explanation",
                   "title": "Additional explanation (optional)",
-                  "description": "Use this only if the relevance of the course to the prerequisite is not clear from the official course description.",
+                  "description": "Use this <strong>only</strong> if the relevance of the course to the prerequisite is not clear from the official course description.",
                   "visibleIf": "{panel.course_ref} notempty",
                   "autoGrow": true,
                   "rows": 3,
@@ -521,7 +542,7 @@
                   "name": "linear_algebra_additional_explanation",
                   "valueName": "additional_explanation",
                   "title": "Additional explanation (optional)",
-                  "description": "Use this only if the relevance of the course to the prerequisite is not clear from the official course description.",
+                  "description": "Use this <strong>only</strong> if the relevance of the course to the prerequisite is not clear from the official course description.",
                   "visibleIf": "{panel.course_ref} notempty",
                   "autoGrow": true,
                   "rows": 3,
@@ -571,7 +592,7 @@
                   "name": "probability_statistics_additional_explanation",
                   "valueName": "additional_explanation",
                   "title": "Additional explanation (optional)",
-                  "description": "Use this only if the relevance of the course to the prerequisite is not clear from the official course description.",
+                  "description": "Use this <strong>only</strong> if the relevance of the course to the prerequisite is not clear from the official course description.",
                   "visibleIf": "{panel.course_ref} notempty",
                   "autoGrow": true,
                   "rows": 3,
@@ -621,7 +642,7 @@
                   "name": "discrete_mathematics_additional_explanation",
                   "valueName": "additional_explanation",
                   "title": "Additional explanation (optional)",
-                  "description": "Use this only if the relevance of the course to the prerequisite is not clear from the official course description.",
+                  "description": "Use this <strong>only</strong> if the relevance of the course to the prerequisite is not clear from the official course description.",
                   "visibleIf": "{panel.course_ref} notempty",
                   "autoGrow": true,
                   "rows": 3,
@@ -671,7 +692,7 @@
                   "name": "data_structures_algorithms_additional_explanation",
                   "valueName": "additional_explanation",
                   "title": "Additional explanation (optional)",
-                  "description": "Use this only if the relevance of the course to the prerequisite is not clear from the official course description.",
+                  "description": "Use this <strong>only</strong> if the relevance of the course to the prerequisite is not clear from the official course description.",
                   "visibleIf": "{panel.course_ref} notempty",
                   "autoGrow": true,
                   "rows": 3,
@@ -721,7 +742,7 @@
                   "name": "programming_software_development_additional_explanation",
                   "valueName": "additional_explanation",
                   "title": "Additional explanation (optional)",
-                  "description": "Use this only if the relevance of the course to the prerequisite is not clear from the official course description.",
+                  "description": "Use this <strong>only</strong> if the relevance of the course to the prerequisite is not clear from the official course description.",
                   "visibleIf": "{panel.course_ref} notempty",
                   "autoGrow": true,
                   "rows": 3,
@@ -771,7 +792,7 @@
                   "name": "data_modeling_databases_additional_explanation",
                   "valueName": "additional_explanation",
                   "title": "Additional explanation (optional)",
-                  "description": "Use this only if the relevance of the course to the prerequisite is not clear from the official course description.",
+                  "description": "Use this <strong>only</strong> if the relevance of the course to the prerequisite is not clear from the official course description.",
                   "visibleIf": "{panel.course_ref} notempty",
                   "autoGrow": true,
                   "rows": 3,
@@ -821,7 +842,7 @@
                   "name": "machine_learning_data_mining_additional_explanation",
                   "valueName": "additional_explanation",
                   "title": "Additional explanation (optional)",
-                  "description": "Use this only if the relevance of the course to the prerequisite is not clear from the official course description.",
+                  "description": "Use this <strong>only</strong> if the relevance of the course to the prerequisite is not clear from the official course description.",
                   "visibleIf": "{panel.course_ref} notempty",
                   "autoGrow": true,
                   "rows": 3,
@@ -837,7 +858,7 @@
       "name": "application_report",
       "title": "5. Report generation",
       "navigationTitle": "5. Report generation",
-      "description": "Please review the information you entered below. Highlighted items indicate possible oversights, such as courses that are not used as evidence or prerequisites for which no evidence has been provided. For long course descriptions, only a short preview is shown here. The full text will be included in the generated PDF.",
+      "description": "<div class=\"page-instructions\"><p>Please review the information you entered below. Highlighted items indicate possible oversights, such as courses that are not used as evidence or prerequisites for which no evidence has been provided. For long course descriptions, only a short preview is shown here. The full text will be included in the generated PDF.</p></div>",
       "elements": [
         {
           "type": "html",

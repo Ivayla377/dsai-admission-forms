@@ -4,12 +4,16 @@ import {
   Serializer,
   SvgRegistry,
 } from "survey-core";
+import { getQuestionValueName } from "./surveyjs-question-utils.js";
 
 const INFO_TOOLTIP_PROPERTY = "infoTooltip";
 const QUESTION_INFO_ICON = "question-info-16x16";
 const TRUSTED_HTML_DESCRIPTION_ELEMENT_NAMES = new Set([
   "admission_requirements_reference",
   "official_course_description",
+  "relevant_courses_page",
+  "prerequisite_coverage_page",
+  "application_report",
 ]);
 
 if (!Serializer.findProperty("question", INFO_TOOLTIP_PROPERTY)) {
@@ -28,7 +32,8 @@ export function addTrustedDescriptionFormatting(survey) {
   survey.onTextMarkdown.add((_sender, options) => {
     if (
       options.name === "description" &&
-      TRUSTED_HTML_DESCRIPTION_ELEMENT_NAMES.has(options.element.name)
+      (TRUSTED_HTML_DESCRIPTION_ELEMENT_NAMES.has(options.element.name) ||
+        getQuestionValueName(options.element) === "additional_explanation")
     ) {
       // These descriptions are trusted, static Form JSON - not applicant input.
       options.html = options.text;

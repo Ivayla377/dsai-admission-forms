@@ -1,4 +1,5 @@
 import { Model } from "survey-core";
+import { addCourseLinkMaintenance } from "./course-links.js";
 
 import { addPrerequisiteKnowledgeContent } from "./prerequisite-content.js";
 import {
@@ -27,6 +28,7 @@ export function createConfiguredSurvey(
   survey.focusFirstQuestionAutomatic = false;
   survey.showCompleteButton = false;
   addPrerequisiteKnowledgeContent(survey);
+  addCourseLinkMaintenance(survey);
   addPrerequisiteCourseUsageValidation(survey);
   addQuestionInfoTooltips(survey);
   addTrustedDescriptionFormatting(survey);
