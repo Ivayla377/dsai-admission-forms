@@ -1,4 +1,4 @@
-# TU/e DS&AI Additional Admissions Form
+# TU/e DS&AI Additional Information Form
 
 An offline, single-file admissions form for the TU/e master's programme Data Science and Artificial Intelligence. The form uses SurveyJS for the
 questionnaire, JSON Schema for its machine-readable output contract, pdfmake

@@ -36,7 +36,7 @@ export function buildPdfDefinition(output, { logoUrl = "" } = {}) {
     pageSize: "A4",
     pageMargins: [42, 58, 42, 52],
     header: () => ({
-      text: "TU/e · DS&AI Additional Admissions Form",
+      text: "TU/e · DS&AI Additional Information Form",
       style: "pageHeader",
       margin: [42, 22, 42, 0],
     }),
@@ -182,7 +182,7 @@ function buildReportHeading(output, logoUrl) {
   const textColumn = {
     width: "*",
     stack: [
-      { text: "DS&AI Additional Admissions Form", style: "reportTitle" },
+      { text: "DS&AI Additional Information Form", style: "reportTitle" },
       {
         text: `Academic year ${output.formVersion}`,
         style: "reportSubtitle",
