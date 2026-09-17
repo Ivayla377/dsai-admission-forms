@@ -863,7 +863,7 @@
         {
           "type": "html",
           "name": "application_report_upload_instruction",
-          "html": "<p class=\"report-upload-instruction\"><strong class=\"draft-wording\">Please download the report at the bottom of this page and upload it to OSIRIS. (Draft wording: to be confirmed.)</strong></p>",
+          "html": "<p class=\"report-upload-instruction\"><strong>Please download and review the PDF report at the bottom of this page, then upload this PDF as instructed in the application form.</strong></p>",
           "showNumber": false
         },
         {
