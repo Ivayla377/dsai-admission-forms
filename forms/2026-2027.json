@@ -286,7 +286,7 @@
     {
       "name": "relevant_courses_page",
       "title": "3. Relevant courses",
-      "description": "<div class=\"page-instructions\"><p>Add every passed course you want to use as evidence for the admission requirements. (To count as evidence, you must have obtained credits as part of a degree program, so non-degree professional experience and online courses cannot be used.) Add each course only once. On the following page, you will select which requirements each course supports.</p></div>",
+      "description": "<div class=\"page-instructions\"><p>Add every passed course you want to use as evidence for the admission requirements. (To count as evidence, you must have obtained credits as part of a degree program, so non-degree professional experience and non-degree online courses cannot be used.) Add each course only once. On the following page, you will select which requirements each course supports.</p></div>",
       "elements": [
         {
           "type": "panel",
