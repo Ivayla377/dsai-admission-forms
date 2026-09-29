@@ -108,6 +108,7 @@ async function generateReport(model, generationId) {
     renderReportReviewSummary(reportView.reviewSummary, preparedOutput);
     preparedPdfBlob = await createAugmentedPdfBlob(preparedOutput, {
       logoUrl: tueLogoUrl,
+      intakeLabel: formDefinition.description,
     });
 
     if (
@@ -149,7 +150,7 @@ function mountReportView() {
 
 function showPreparingState(reportView) {
   reportView.completionActions.dataset.state = "preparing";
-  reportView.academicYear.textContent = `Academic year ${FORM_VERSION}`;
+  reportView.academicYear.textContent = formDefinition.description;
   reportView.completionStatus.textContent =
     "Please wait while the PDF and embedded Output JSON are prepared.";
   reportView.reviewSummary.textContent = "Checking for likely omissions...";
@@ -208,7 +209,7 @@ function setBranding() {
   favicon.setAttribute("href", tueLogoUrl);
 
   requiredElement("appTitle").textContent = formDefinition.title;
-  requiredElement("appYear").textContent = FORM_VERSION;
+  requiredElement("appYear").textContent = formDefinition.description;
 }
 
 function requiredElement(id) {

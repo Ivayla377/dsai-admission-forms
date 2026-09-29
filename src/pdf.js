@@ -22,7 +22,10 @@ const GRADING_SYSTEM_LABELS = Object.freeze({
   other: "Other",
 });
 
-export function buildPdfDefinition(output, { logoUrl = "" } = {}) {
+export function buildPdfDefinition(
+  output,
+  { logoUrl = "", intakeLabel = output.formVersion } = {},
+) {
   const outputJson = serializeOutputJson(output);
   const attachmentName = `dsai-admission-${output.formVersion}.json`;
 
@@ -42,14 +45,14 @@ export function buildPdfDefinition(output, { logoUrl = "" } = {}) {
     }),
     footer: (currentPage, pageCount) => ({
       columns: [
-        { text: `Form ${output.formVersion}`, alignment: "left" },
+        { text: intakeLabel, alignment: "left" },
         { text: `Page ${currentPage} of ${pageCount}`, alignment: "right" },
       ],
       style: "pageFooter",
       margin: [42, 0, 42, 18],
     }),
     content: [
-      buildReportHeading(output, logoUrl),
+      buildReportHeading(intakeLabel, logoUrl),
       {
         text: "1. Applicant",
         style: "sectionHeading",
@@ -178,13 +181,13 @@ export function downloadPdfBlob(blob, output) {
   window.setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
-function buildReportHeading(output, logoUrl) {
+function buildReportHeading(intakeLabel, logoUrl) {
   const textColumn = {
     width: "*",
     stack: [
       { text: "DS&AI Additional Information Form", style: "reportTitle" },
       {
-        text: `Academic year ${output.formVersion}`,
+        text: intakeLabel,
         style: "reportSubtitle",
       },
     ],
